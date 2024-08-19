@@ -1,0 +1,29 @@
+[package]
+name = "rusty_backend"
+version = "0.1.0"
+edition = "2021"
+
+
+[workspace]
+members = [".","migration","entity"]
+
+
+[dependencies]
+migration = { path = "migration" }
+entity = { path = "entity" }
+axum = { version = "0.7.5", features = ["multipart"] }
+jsonwebtoken = "9.3.0"
+tokio = { version = "1", features = ["full"] }
+serde = "1.0.197"
+serde_json = "1.0.114"
+chrono = "0.4.38"
+sea-orm = { version = "1.0.0-rc.5", features = [ "sqlx-postgres", "runtime-tokio-rustls", "macros" ] }
+uuid = { version = "1.10.0", features = ["v4"] }
+bcrypt = "0.15.1"
+tower-http = { version = "0.5.2", features = ["cors"] }
+dotenv = "0.15.0"
+lazy_static = "1.5.0"
+cookie = "0.18.1"
+axum-extra = { version = "0.9.3" }
+json = "0.12.4"
+
