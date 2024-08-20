@@ -21,7 +21,7 @@ use sea_orm::{ActiveModelTrait, EntityTrait};
 use sea_orm::{DatabaseConnection, Set};
 use tokio::{
     fs::{create_dir_all, File},
-    io::AsyncWriteExt,
+    io::{AsyncWriteExt, Interest},
 };
 use uuid::Uuid;
 
@@ -72,7 +72,7 @@ pub async fn signup_handler(
         .openness
         .unwrap_or_else(|| "Neutral".to_string());
     
-    let fav_activ = signup_info.fav_activ.unwrap_or_else(|| "None".to_string());
+    let interest = signup_info.interest.unwrap_or_else(|| "None".to_string());
     
     let exp_qual = signup_info.exp_qual.unwrap_or_else(|| "None".to_string());
     
@@ -84,9 +84,6 @@ pub async fn signup_handler(
         .social_habits
         .unwrap_or_else(|| "Unspecified".to_string());
     
-    let comm_method = signup_info
-        .comm_method
-        .unwrap_or_else(|| "Unspecified".to_string());
     
     let past_relations = signup_info
         .past_relations
@@ -106,11 +103,10 @@ pub async fn signup_handler(
         gender: Set(gender),
         location: Set(Some(location)),
         openness: Set(Some(openness)),
-        fav_activ: Set(Some(fav_activ)),
+        interests: Set(Some(interest)),
         exp_qual: Set(Some(exp_qual)),
         relation_type: Set(Some(relation_type)),
         social_habits: Set(Some(social_habits)),
-        comm_method: Set(Some(comm_method)),
         past_relations: Set(Some(past_relations)),
         image_url: Set(image_url),
         score: Set(0),
@@ -212,29 +208,29 @@ pub async fn login_handler(
 //     Err(StatusCode::UNAUTHORIZED)
 // }
 
-pub async fn decode_jwt(cookies: TypedHeader<Cookie>) -> Result<Json<String>, StatusCode> {
-    // Retrieve the token from the cookies
-    if let Some(token_cookie) = cookies.get("token") {
-        let token = token_cookie.to_string();
+// pub async fn decode_jwt(cookies: TypedHeader<Cookie>) -> Result<Json<String>, StatusCode> {
+//     // Retrieve the token from the cookies
+//     if let Some(token_cookie) = cookies.get("token") {
+//         let token = token_cookie.to_string();
 
-        match decode::<Claims>(
-            &token,
-            &DecodingKey::from_secret("696969".as_ref()),
-            &Validation::default(),
-        ) {
-            Ok(token_data) => {
-                let email = token_data.claims.sub;
-                return Ok(Json(email));
-            }
-            Err(e) => {
-                eprintln!("Error decoding token {} !!!", e);
-                return Err(StatusCode::UNAUTHORIZED);
-            }
-        }
-    }
+//         match decode::<Claims>(
+//             &token,
+//             &DecodingKey::from_secret("696969".as_ref()),
+//             &Validation::default(),
+//         ) {
+//             Ok(token_data) => {
+//                 let email = token_data.claims.sub;
+//                 return Ok(Json(email));
+//             }
+//             Err(e) => {
+//                 eprintln!("Error decoding token {} !!!", e);
+//                 return Err(StatusCode::UNAUTHORIZED);
+//             }
+//         }
+//     }
 
-    Err(StatusCode::UNAUTHORIZED)
-}
+//     Err(StatusCode::UNAUTHORIZED)
+// }
 
 
 pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {

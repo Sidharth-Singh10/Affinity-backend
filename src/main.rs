@@ -3,7 +3,7 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
-use controller::{code_handler, decode_jwt, login_handler, signup_handler};
+use controller::{code_handler, login_handler, signup_handler};
 use sea_orm::{ColIdx, Database};
 use tower_http::cors::{Any, CorsLayer,AllowOrigin};
 mod bcrypts;
@@ -33,7 +33,7 @@ async fn main() {
     let app: Router<()> = Router::new()
         
         .route("/login", post(login_handler))
-        .route("/decode", get(decode_jwt))
+        // .route("/decode", get(decode_jwt))
         .route("/signup", post(signup_handler))
         .route("/runcode", post(code_handler))
         .layer(cors)

@@ -22,11 +22,10 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(User::Gender).string().not_null())
                     .col(ColumnDef::new(User::Location).string())
                     .col(ColumnDef::new(User::Openness).string())
-                    .col(ColumnDef::new(User::FavActiv).string())
+                    .col(ColumnDef::new(User::Interests).string())
                     .col(ColumnDef::new(User::ExpQual).string())
                     .col(ColumnDef::new(User::RelationType).string())
                     .col(ColumnDef::new(User::SocialHabits).string())
-                    .col(ColumnDef::new(User::CommMethod).string())
                     .col(ColumnDef::new(User::PastRelations).string())
                     .col(ColumnDef::new(User::ImageUrl).string().not_null())
                     .col(ColumnDef::new(User::Score).integer().not_null())
@@ -58,11 +57,10 @@ enum User {
     Gender,
     Location,
     Openness,
-    FavActiv,
+    Interests,
     ExpQual,
     RelationType,
     SocialHabits,
-    CommMethod,
     PastRelations,
     ImageUrl,
     Score,
