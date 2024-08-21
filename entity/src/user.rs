@@ -23,6 +23,11 @@ pub struct Model {
     pub relation_type: Option<String>,
     pub social_habits: Option<String>,
     pub past_relations: Option<String>,
+    pub values: Option<String>,
+    pub style: Option<String>,
+    pub traits: Option<String>,
+    pub commitment: Option<String>,
+    pub resolution: Option<String>,
     pub image_url: String,
     pub score: i32,
     #[sea_orm(unique)]

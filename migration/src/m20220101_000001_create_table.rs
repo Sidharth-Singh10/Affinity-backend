@@ -27,6 +27,11 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(User::RelationType).string())
                     .col(ColumnDef::new(User::SocialHabits).string())
                     .col(ColumnDef::new(User::PastRelations).string())
+                    .col(ColumnDef::new(User::Values).string())
+                    .col(ColumnDef::new(User::Style).string())
+                    .col(ColumnDef::new(User::Traits).string())
+                    .col(ColumnDef::new(User::Commitment).string())
+                    .col(ColumnDef::new(User::Resolution).string())
                     .col(ColumnDef::new(User::ImageUrl).string().not_null())
                     .col(ColumnDef::new(User::Score).integer().not_null())
                     .col(ColumnDef::new(User::Uuid).uuid().unique_key().not_null())
@@ -62,6 +67,11 @@ enum User {
     RelationType,
     SocialHabits,
     PastRelations,
+    Values,
+    Style,
+    Traits,
+    Commitment,
+    Resolution,
     ImageUrl,
     Score,
     Uuid,

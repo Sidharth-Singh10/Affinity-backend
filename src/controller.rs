@@ -89,27 +89,32 @@ pub async fn signup_handler(
 
     let image_url: String = signup_info.image_url.unwrap_or_else(|| "".to_string());
 
-    let user_model = user::ActiveModel {
-        user_name: Set(username),
-        email: Set(email),
-        first_name: Set(Some(first_name)),
-        last_name: Set(Some(last_name)),
-        password: Set(hashed_password),
-        uuid: Set(Uuid::new_v4()),
-        created_at: Set(Utc::now().naive_utc()),
-        age: Set(age),
-        gender: Set(gender),
-        location: Set(Some(location)),
-        openness: Set(Some(openness)),
-        interests: Set(Some(interest)),
-        exp_qual: Set(Some(exp_qual)),
-        relation_type: Set(Some(relation_type)),
-        social_habits: Set(Some(social_habits)),
-        past_relations: Set(Some(past_relations)),
-        image_url: Set(image_url),
-        score: Set(0),
-        ..Default::default()
-    };
+                let user_model = user::ActiveModel {
+                    user_name: Set(username),
+                    email: Set(email),
+                    first_name: Set(Some(first_name)),
+                    last_name: Set(Some(last_name)),
+                    password: Set(hashed_password),
+                    uuid: Set(Uuid::new_v4()),
+                    created_at: Set(Utc::now().naive_utc()),
+                    age: Set(age),
+                    gender: Set(gender),
+                    location: Set(Some(location)),
+                    openness: Set(Some(openness)),
+                    interests: Set(Some(interest)),
+                    exp_qual: Set(Some(exp_qual)),
+                    relation_type: Set(Some(relation_type)),
+                    social_habits: Set(Some(social_habits)),
+                    past_relations: Set(Some(past_relations)),
+                    values: Set(None),          
+                    style: Set(None),           
+                    traits: Set(None),          
+                    commitment: Set(None),      
+                    resolution: Set(None), 
+                    image_url: Set(image_url),
+                    score: Set(0),
+                    ..Default::default()
+                };
 
     match user_model.insert(&db).await {
         Ok(inserted_user) => {
@@ -263,7 +268,7 @@ pub async fn get_boys_handler(Extension(db): Extension<DatabaseConnection>) -> i
 pub async fn get_girls_handler(Extension(db): Extension<DatabaseConnection>) -> impl IntoResponse
 {
     let boys = user::Entity::find()
-    .filter(user::Column::Gender.contains("female"))
+    .filter(user::Column::Gender.contains("Female"))
     .all(&db)
     .await;
 

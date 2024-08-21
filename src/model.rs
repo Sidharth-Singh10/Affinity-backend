@@ -15,9 +15,13 @@ pub struct SignUpInfo {
     pub exp_qual: Option<String>,   
     pub relation_type: Option<String>, 
     pub social_habits: Option<String>, 
-    pub past_relations: Option<String>, 
+    pub past_relations: Option<String>,
+    pub values: Option<String>,
+    pub style: Option<String>,
+    pub traits: Option<String>,
+    pub commitment: Option<String>,
+    pub resolution: Option<String>, 
     pub image_url: Option<String>,
-    pub score: i32,
 }
 
 #[derive(Deserialize)]
