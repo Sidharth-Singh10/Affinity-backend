@@ -20,7 +20,7 @@ pipeline {
         stage('Push') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
+                    docker.withRegistry('https://index.docker.io/v1/', 'eb9c1cbf-8638-4a36-b866-dd6beb6471b0') {
                         def backendImage = docker.image("$BACKEND_IMAGE:$DOCKER_TAG")
                         backendImage.push()
                     }
