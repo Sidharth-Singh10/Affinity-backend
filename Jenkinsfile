@@ -27,5 +27,13 @@ pipeline {
                 }
             }
         }
+        stage('Deploy')
+        {
+            steps {
+                
+                    sh 'curl -X POST "http://ec2-3-7-69-234.ap-south-1.compute.amazonaws.com:3002/webhook"
+
+            }
+        }
     }
 }
