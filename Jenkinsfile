@@ -31,16 +31,7 @@ pipeline {
         {
             steps {
                 steps {
-                    def response = sh(
-                        script: 'curl -s -o /dev/null -w "%{http_code}" -X POST "http://ec2-3-7-69-234.ap-south-1.compute.amazonaws.com:3002/webhook"',
-                        returnStdout: true
-                    ).trim()
-
-                    if (response == '200') {
-                        echo 'Deployment triggered successfully!'
-                    } else {
-                        error "Deployment failed with HTTP status code: ${response}"
-                    }
+                    sh 'curl -X POST "http://ec2-3-7-69-234.ap-south-1.compute.amazonaws.com:3002/webhook"'
                 }
             }
         }
