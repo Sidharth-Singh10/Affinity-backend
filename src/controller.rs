@@ -235,6 +235,11 @@ pub async fn login_handler(
 //     Err(StatusCode::UNAUTHORIZED)
 // }
 
+pub async fn change_score_handler (Extension(db):Extension<DatabaseConnection>)
+{
+
+}
+
 pub async fn get_boys_handler(Extension(db): Extension<DatabaseConnection>) -> impl IntoResponse
 {
     let boys = user::Entity::find()
