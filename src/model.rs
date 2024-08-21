@@ -30,6 +30,11 @@ pub struct LoginInfo {
     pub password: String,
 }
 
+#[derive(Deserialize)]
+pub struct GetUserInfo{
+    pub email:String,
+}
+
 #[derive(Serialize)]
 pub struct LoginResponse {
     pub token: String,

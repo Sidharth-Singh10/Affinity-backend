@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::{
     bcrypts::{hash_password, verify_password},
     // db::create_user,
-    model::{Claims, LoginInfo, LoginResponse, SignUpInfo},
+    model::{Claims, GetUserInfo, LoginInfo, LoginResponse, SignUpInfo},
     utils::scripts::{compare_with_answer_file, docker_run},
 };
 use axum::{
@@ -283,6 +283,28 @@ pub async fn get_girls_handler(Extension(db): Extension<DatabaseConnection>) -> 
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }    
+
+}
+
+pub async fn get_user_handler(Extension(db): Extension<DatabaseConnection>,Json(get_user_info): Json<GetUserInfo>) -> impl IntoResponse
+{
+    let email = get_user_info.email;
+    let user = user::Entity::find()
+    .filter(user::Column::Email.contains(email))
+    .one(&db)
+    .await;
+
+    match user {
+        Ok(user) => {
+            // Return the list of boys in JSON format
+            Json(user).into_response()
+        }
+        Err(e) => {
+            // Log the error and return a 500 status code
+            eprintln!("Failed to get user from the database: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    } 
 
 }
 

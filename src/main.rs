@@ -3,7 +3,7 @@ use axum::{
     routing::{get, post},
     Extension, Router,
 };
-use controller::{code_handler, login_handler, signup_handler,get_boys_handler,get_girls_handler};
+use controller::{code_handler, get_boys_handler, get_girls_handler, get_user_handler, login_handler, signup_handler};
 use sea_orm::{ColIdx, Database};
 use tower_http::cors::{Any, CorsLayer,AllowOrigin};
 mod bcrypts;
@@ -36,6 +36,7 @@ async fn main() {
         // .route("/decode", get(decode_jwt))
         .route("/signup", post(signup_handler))
         .route("/runcode", post(code_handler))
+        .route("/getuser", post(get_user_handler))
         .route("/getboys",get(get_boys_handler))
         .route("/getgirls",get(get_girls_handler))
         .layer(cors)
