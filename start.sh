@@ -9,4 +9,4 @@ docker run \
   --publish 3001:3001 \
   --volume jenkins-data:/var/jenkins_home \
   --volume jenkins-docker-certs:/certs/client:ro \
-  b969a13293f639ba099681b71f8cb05cda25d32937d6bd1675b81ea8773df834
+  rusty_backend
