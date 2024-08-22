@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use crate::{
     bcrypts::{hash_password, verify_password},
     // db::create_user,
-    model::{CharacterDetails, Claims, GetUserInfo, LoginInfo, LoginResponse, SignUpInfo, UpadateScoreInfo},
+    model::{
+        CharacterDetails, Claims, GetUserInfo, LoginInfo, LoginResponse, SignUpInfo,
+        UpadateScoreInfo,
+    },
     utils::scripts::{compare_with_answer_file, docker_run},
 };
 use axum::{
@@ -281,28 +284,28 @@ pub async fn update_score_handler(
     Extension(db): Extension<DatabaseConnection>,
     Json(update_score_info): Json<UpadateScoreInfo>,
 ) -> impl IntoResponse {
-    let email = update_score_info.email;
+    let email = update_score_info.email.clone();
 
-    let user = user::Entity::find()
-        .filter(user::Column::Email.contains(email))
+    match user::Entity::find()
+        .filter(user::Column::Email.eq(email))
         .one(&db)
-        .await;
-
-    match user {
-        Ok(user) => {
-            let mut user: user::ActiveModel = user.unwrap().into();
-            user.score = Set(update_score_info.score.to_owned());
-            let user = user.update(&db).await;
-
-            match user {
-                Ok(_) => StatusCode::ACCEPTED.into_response(),
-                Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        .await
+    {
+        Ok(Some(user)) => {
+            let mut active_user: user::ActiveModel = user.into();
+            active_user.score = Set(update_score_info.score);
+            match active_user.update(&db).await {
+                Ok(_) => (StatusCode::ACCEPTED, Json("Score updated successfully")).into_response(),
+                Err(e) => {
+                    eprintln!("Failed to update user score: {}", e);
+                    (StatusCode::INTERNAL_SERVER_ERROR, Json("Failed to update score")).into_response()
+                }
             }
         }
+        Ok(None) => (StatusCode::NOT_FOUND, Json("User not found")).into_response(),
         Err(e) => {
-            // Log the error and return a 500 status code
-            eprintln!("Failed to get user from the database: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+            eprintln!("Failed to retrieve user: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json("Failed to retrieve user")).into_response()
         }
     }
 }
@@ -330,15 +333,13 @@ pub async fn get_user_handler(
     }
 }
 
-pub async fn get_all_users_handler(Extension(db): Extension<DatabaseConnection>) -> impl IntoResponse {
-    let users = user::Entity::find()
-        .all(&db)
-        .await;
+pub async fn get_all_users_handler(
+    Extension(db): Extension<DatabaseConnection>,
+) -> impl IntoResponse {
+    let users = user::Entity::find().all(&db).await;
 
     match users {
-        Ok(users) => {
-            Json(users).into_response()
-        }
+        Ok(users) => Json(users).into_response(),
         Err(e) => {
             eprintln!("Failed to get users from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
@@ -346,7 +347,10 @@ pub async fn get_all_users_handler(Extension(db): Extension<DatabaseConnection>)
     }
 }
 
-pub async fn update_user_character_handler(Extension(db): Extension<DatabaseConnection>, Json(character_details):Json<CharacterDetails>) -> impl IntoResponse {
+pub async fn update_user_character_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(character_details): Json<CharacterDetails>,
+) -> impl IntoResponse {
     let email = character_details.email;
 
     let user = user::Entity::find()
@@ -377,9 +381,7 @@ pub async fn update_user_character_handler(Extension(db): Extension<DatabaseConn
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
-
 }
-
 
 pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
     while let Some(field) = multipart.next_field().await.unwrap() {
