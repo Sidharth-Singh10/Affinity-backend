@@ -4,8 +4,8 @@ use crate::{
     bcrypts::{hash_password, verify_password},
     // db::create_user,
     model::{
-        CharacterDetails, Claims, GetUserInfo, LoginInfo, LoginResponse, SignUpInfo,
-        UpadateScoreInfo,
+        CharacterDetails, Claims, FriendListInfo, GetUserInfo, GirlBoyInfo, LoginInfo,
+        SignUpInfo, UpadateScoreInfo,
     },
     utils::scripts::{compare_with_answer_file, docker_run},
 };
@@ -15,18 +15,17 @@ use axum::{
     response::IntoResponse,
     Extension, Json,
 };
-use entity::user::Model;
+use entity::friend_list;
 
 use chrono::Utc;
-use cookie::{Cookie, CookieJar};
+use cookie::Cookie;
 use entity::user;
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{encode, EncodingKey, Header};
 use sea_orm::{ActiveModelTrait, EntityTrait};
 use sea_orm::{DatabaseConnection, Set};
-use serde::Serialize;
 use tokio::{
     fs::{create_dir_all, File},
-    io::{AsyncWriteExt, Interest},
+    io::AsyncWriteExt,
 };
 use uuid::Uuid;
 
@@ -74,7 +73,7 @@ pub async fn signup_handler(
         .openness
         .unwrap_or_else(|| "Neutral".to_string());
 
-    let interest = signup_info.interest.unwrap_or_else(|| "None".to_string());
+    let interest = signup_info.interests.unwrap_or_else(|| "None".to_string());
 
     let exp_qual = signup_info.exp_qual.unwrap_or_else(|| "None".to_string());
 
@@ -91,6 +90,7 @@ pub async fn signup_handler(
         .unwrap_or_else(|| "Unspecified".to_string());
 
     let image_url: String = signup_info.image_url.unwrap_or_else(|| "".to_string());
+    let score = signup_info.score;
 
     let user_model = user::ActiveModel {
         user_name: Set(username),
@@ -115,7 +115,7 @@ pub async fn signup_handler(
         commitment: Set(None),
         resolution: Set(None),
         image_url: Set(image_url),
-        score: Set(0),
+        score: Set(score),
         ..Default::default()
     };
 
@@ -127,7 +127,7 @@ pub async fn signup_handler(
                 .unwrap();
 
             if let Some(user) = created_user {
-                return Ok((Json(user)));
+                return Ok(StatusCode::ACCEPTED);
             } else {
                 return Err(StatusCode::INTERNAL_SERVER_ERROR);
             }
@@ -298,14 +298,22 @@ pub async fn update_score_handler(
                 Ok(_) => (StatusCode::ACCEPTED, Json("Score updated successfully")).into_response(),
                 Err(e) => {
                     eprintln!("Failed to update user score: {}", e);
-                    (StatusCode::INTERNAL_SERVER_ERROR, Json("Failed to update score")).into_response()
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json("Failed to update score"),
+                    )
+                        .into_response()
                 }
             }
         }
         Ok(None) => (StatusCode::NOT_FOUND, Json("User not found")).into_response(),
         Err(e) => {
             eprintln!("Failed to retrieve user: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Json("Failed to retrieve user")).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json("Failed to retrieve user"),
+            )
+                .into_response()
         }
     }
 }
@@ -367,6 +375,7 @@ pub async fn update_user_character_handler(
             user.traits = Set(Some(character_details.traits));
             user.commitment = Set(Some(character_details.commitment));
             user.resolution = Set(Some(character_details.resolution));
+            user.interests = Set(Some(character_details.interests));
 
             let user = user.update(&db).await;
 
@@ -379,6 +388,123 @@ pub async fn update_user_character_handler(
             // Log the error and return a 500 status code
             eprintln!("Failed to get user from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn add_friend_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(friend_list_info): Json<FriendListInfo>,
+) -> impl IntoResponse {
+    let girl_email = friend_list_info.girl_email;
+    let boy_email = friend_list_info.boy_email;
+
+    let friend_list_model = friend_list::ActiveModel {
+        girl_email_id: Set(girl_email),
+        boy_email_id: Set(boy_email),
+        flag: Set("0".to_string()),
+        contest_score: Set("0".to_string()),
+        ..Default::default()
+    };
+
+    match friend_list_model.insert(&db).await {
+        Ok(_) => (StatusCode::ACCEPTED, Json("Friend added successfully")).into_response(),
+        Err(e) => {
+            eprintln!("Failed to insert user into the database: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json("Failed add friend")).into_response()
+        }
+    }
+}
+
+pub async fn get_girl_request_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(boy_info): Json<GirlBoyInfo>,
+) -> impl IntoResponse {
+    let boy_email = boy_info.email;
+
+    let girl_list = friend_list::Entity::find()
+        .filter(friend_list::Column::BoyEmailId.contains(boy_email))
+        .filter(friend_list::Column::BoyEmailId.contains("0"))
+        .all(&db)
+        .await;
+
+    match girl_list {
+        Ok(girl_list) => {
+            // Return the list of boys in JSON format
+            Json(girl_list).into_response()
+        }
+
+        Err(e) => {
+            // Log the error and return a 500 status code
+            eprintln!("Failed to get user from the database: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn get_accepted_boys_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(boy_info): Json<GirlBoyInfo>,
+) -> impl IntoResponse {
+    let girl_email = boy_info.email;
+
+    let boy_list = friend_list::Entity::find()
+        .filter(friend_list::Column::BoyEmailId.contains(girl_email))
+        .filter(friend_list::Column::BoyEmailId.contains("1"))
+        .all(&db)
+        .await;
+
+    match boy_list {
+        Ok(boy_list) => {
+            // Return the list of boys in JSON format
+            Json(boy_list).into_response()
+        }
+
+        Err(e) => {
+            // Log the error and return a 500 status code
+            eprintln!("Failed to get user from the database: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn change_flag_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(boy_info): Json<GirlBoyInfo>,
+) -> impl IntoResponse {
+    let email = boy_info.email;
+
+    let user = friend_list::Entity::find()
+        .filter(friend_list::Column::BoyEmailId.contains(email))
+        .one(&db)
+        .await;
+
+    match user {
+        Ok(user) => {
+            let mut user: friend_list::ActiveModel = user.unwrap().into();
+            // user.score = Set(character_details.score.to_owned());
+
+            user.flag = Set("1".to_string());
+
+            let user = user.update(&db).await;
+
+            match user {
+                Ok(_) => (StatusCode::ACCEPTED, Json("Flag Updated successfully")).into_response(),
+                Err(_) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json("Failed to update flag"),
+                )
+                    .into_response(),
+            }
+        }
+        Err(e) => {
+            // Log the error and return a 500 status code
+            eprintln!("Failed to get user from the database: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json("Failed to update flag"),
+            )
+                .into_response()
         }
     }
 }

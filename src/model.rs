@@ -11,7 +11,7 @@ pub struct SignUpInfo {
     pub age: i32,      
     pub location: Option<String>,   
     pub openness: Option<String>,   
-    pub interest: Option<String>,  
+    pub interests: Option<String>,  
     pub exp_qual: Option<String>,   
     pub relation_type: Option<String>, 
     pub social_habits: Option<String>, 
@@ -21,6 +21,7 @@ pub struct SignUpInfo {
     pub traits: Option<String>,
     pub commitment: Option<String>,
     pub resolution: Option<String>, 
+    pub score:i32,
     pub image_url: Option<String>,
 }
 
@@ -44,15 +45,26 @@ pub struct UpadateScoreInfo{
 pub struct LoginResponse {
     pub token: String,
 }
+#[derive(Deserialize)]
+pub struct FriendListInfo{
+    pub girl_email:String,
+    pub boy_email:String,
+}
 
 #[derive(Deserialize)]
 pub struct CharacterDetails{
     pub email:String,
+    pub interests:String,
     pub values:String,
     pub style:String,
     pub traits:String,
     pub commitment: String,
     pub resolution: String,
+}
+
+#[derive(Deserialize)]
+pub struct GirlBoyInfo{
+    pub email:String,
 }
 
 #[derive(Deserialize, Serialize)]

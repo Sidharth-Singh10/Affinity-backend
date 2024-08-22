@@ -3,7 +3,7 @@ use axum::{
     routing::{get, post, put},
     Extension, Router,
 };
-use controller::{code_handler, get_all_users_handler, get_boys_handler, get_girls_handler, get_user_handler, login_handler, signup_handler, update_score_handler, update_user_character_handler};
+use controller::{add_friend_handler, change_flag_handler, code_handler, get_accepted_boys_handler, get_all_users_handler, get_boys_handler, get_girl_request_handler, get_girls_handler, get_user_handler, login_handler, signup_handler, update_score_handler, update_user_character_handler};
 use sea_orm::{ColIdx, Database};
 use tower_http::cors::{Any, CorsLayer,AllowOrigin};
 mod bcrypts;
@@ -41,7 +41,11 @@ async fn main() {
         .route("/getgirls",get(get_girls_handler))
         .route("/updatescore",put(update_score_handler))
         .route("/getallusers", get(get_all_users_handler))
+        .route("/addfriend", post(add_friend_handler))
         .route("/updatecharacter",put(update_user_character_handler))
+        .route("/getgirlrequests",post(get_girl_request_handler))
+        .route("/getacceptedboys",post(get_accepted_boys_handler))
+        .route("/changeflag",post(change_flag_handler))
         .layer(cors)
         .layer(Extension(db));
 
