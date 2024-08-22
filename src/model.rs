@@ -34,10 +34,25 @@ pub struct LoginInfo {
 pub struct GetUserInfo{
     pub email:String,
 }
+#[derive(Deserialize)]
+pub struct UpadateScoreInfo{
+    pub email:String,
+    pub score: i32,
+}
 
 #[derive(Serialize)]
 pub struct LoginResponse {
     pub token: String,
+}
+
+#[derive(Deserialize)]
+pub struct CharacterDetails{
+    pub email:String,
+    pub values:String,
+    pub style:String,
+    pub traits:String,
+    pub commitment: String,
+    pub resolution: String,
 }
 
 #[derive(Deserialize, Serialize)]

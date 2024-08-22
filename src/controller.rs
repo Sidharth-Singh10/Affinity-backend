@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::{
     bcrypts::{hash_password, verify_password},
     // db::create_user,
-    model::{Claims, GetUserInfo, LoginInfo, LoginResponse, SignUpInfo},
+    model::{CharacterDetails, Claims, GetUserInfo, LoginInfo, LoginResponse, SignUpInfo, UpadateScoreInfo},
     utils::scripts::{compare_with_answer_file, docker_run},
 };
 use axum::{
@@ -89,32 +89,32 @@ pub async fn signup_handler(
 
     let image_url: String = signup_info.image_url.unwrap_or_else(|| "".to_string());
 
-                let user_model = user::ActiveModel {
-                    user_name: Set(username),
-                    email: Set(email),
-                    first_name: Set(Some(first_name)),
-                    last_name: Set(Some(last_name)),
-                    password: Set(hashed_password),
-                    uuid: Set(Uuid::new_v4()),
-                    created_at: Set(Utc::now().naive_utc()),
-                    age: Set(age),
-                    gender: Set(gender),
-                    location: Set(Some(location)),
-                    openness: Set(Some(openness)),
-                    interests: Set(Some(interest)),
-                    exp_qual: Set(Some(exp_qual)),
-                    relation_type: Set(Some(relation_type)),
-                    social_habits: Set(Some(social_habits)),
-                    past_relations: Set(Some(past_relations)),
-                    values: Set(None),          
-                    style: Set(None),           
-                    traits: Set(None),          
-                    commitment: Set(None),      
-                    resolution: Set(None), 
-                    image_url: Set(image_url),
-                    score: Set(0),
-                    ..Default::default()
-                };
+    let user_model = user::ActiveModel {
+        user_name: Set(username),
+        email: Set(email),
+        first_name: Set(Some(first_name)),
+        last_name: Set(Some(last_name)),
+        password: Set(hashed_password),
+        uuid: Set(Uuid::new_v4()),
+        created_at: Set(Utc::now().naive_utc()),
+        age: Set(age),
+        gender: Set(gender),
+        location: Set(Some(location)),
+        openness: Set(Some(openness)),
+        interests: Set(Some(interest)),
+        exp_qual: Set(Some(exp_qual)),
+        relation_type: Set(Some(relation_type)),
+        social_habits: Set(Some(social_habits)),
+        past_relations: Set(Some(past_relations)),
+        values: Set(None),
+        style: Set(None),
+        traits: Set(None),
+        commitment: Set(None),
+        resolution: Set(None),
+        image_url: Set(image_url),
+        score: Set(0),
+        ..Default::default()
+    };
 
     match user_model.insert(&db).await {
         Ok(inserted_user) => {
@@ -240,17 +240,11 @@ pub async fn login_handler(
 //     Err(StatusCode::UNAUTHORIZED)
 // }
 
-pub async fn change_score_handler (Extension(db):Extension<DatabaseConnection>)
-{
-
-}
-
-pub async fn get_boys_handler(Extension(db): Extension<DatabaseConnection>) -> impl IntoResponse
-{
+pub async fn get_boys_handler(Extension(db): Extension<DatabaseConnection>) -> impl IntoResponse {
     let boys = user::Entity::find()
-    .filter(user::Column::Gender.contains("Male"))
-    .all(&db)
-    .await;
+        .filter(user::Column::Gender.contains("Male"))
+        .all(&db)
+        .await;
 
     match boys {
         Ok(boys) => {
@@ -262,15 +256,13 @@ pub async fn get_boys_handler(Extension(db): Extension<DatabaseConnection>) -> i
             eprintln!("Failed to get boys from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
-    }    
-
+    }
 }
-pub async fn get_girls_handler(Extension(db): Extension<DatabaseConnection>) -> impl IntoResponse
-{
+pub async fn get_girls_handler(Extension(db): Extension<DatabaseConnection>) -> impl IntoResponse {
     let boys = user::Entity::find()
-    .filter(user::Column::Gender.contains("Female"))
-    .all(&db)
-    .await;
+        .filter(user::Column::Gender.contains("Female"))
+        .all(&db)
+        .await;
 
     match boys {
         Ok(boys) => {
@@ -282,17 +274,48 @@ pub async fn get_girls_handler(Extension(db): Extension<DatabaseConnection>) -> 
             eprintln!("Failed to get boys from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
-    }    
-
+    }
 }
 
-pub async fn get_user_handler(Extension(db): Extension<DatabaseConnection>,Json(get_user_info): Json<GetUserInfo>) -> impl IntoResponse
-{
+pub async fn update_score_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(update_score_info): Json<UpadateScoreInfo>,
+) -> impl IntoResponse {
+    let email = update_score_info.email;
+
+    let user = user::Entity::find()
+        .filter(user::Column::Email.contains(email))
+        .one(&db)
+        .await;
+
+    match user {
+        Ok(user) => {
+            let mut user: user::ActiveModel = user.unwrap().into();
+            user.score = Set(update_score_info.score.to_owned());
+            let user = user.update(&db).await;
+
+            match user {
+                Ok(_) => StatusCode::ACCEPTED.into_response(),
+                Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            }
+        }
+        Err(e) => {
+            // Log the error and return a 500 status code
+            eprintln!("Failed to get user from the database: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn get_user_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(get_user_info): Json<GetUserInfo>,
+) -> impl IntoResponse {
     let email = get_user_info.email;
     let user = user::Entity::find()
-    .filter(user::Column::Email.contains(email))
-    .one(&db)
-    .await;
+        .filter(user::Column::Email.contains(email))
+        .one(&db)
+        .await;
 
     match user {
         Ok(user) => {
@@ -304,9 +327,59 @@ pub async fn get_user_handler(Extension(db): Extension<DatabaseConnection>,Json(
             eprintln!("Failed to get user from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
-    } 
+    }
+}
+
+pub async fn get_all_users_handler(Extension(db): Extension<DatabaseConnection>) -> impl IntoResponse {
+    let users = user::Entity::find()
+        .all(&db)
+        .await;
+
+    match users {
+        Ok(users) => {
+            Json(users).into_response()
+        }
+        Err(e) => {
+            eprintln!("Failed to get users from the database: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn update_user_character_handler(Extension(db): Extension<DatabaseConnection>, Json(character_details):Json<CharacterDetails>) -> impl IntoResponse {
+    let email = character_details.email;
+
+    let user = user::Entity::find()
+        .filter(user::Column::Email.contains(email))
+        .one(&db)
+        .await;
+
+    match user {
+        Ok(user) => {
+            let mut user: user::ActiveModel = user.unwrap().into();
+            // user.score = Set(character_details.score.to_owned());
+            user.values = Set(Some(character_details.values));
+            user.style = Set(Some(character_details.style));
+            user.traits = Set(Some(character_details.traits));
+            user.commitment = Set(Some(character_details.commitment));
+            user.resolution = Set(Some(character_details.resolution));
+
+            let user = user.update(&db).await;
+
+            match user {
+                Ok(_) => StatusCode::ACCEPTED.into_response(),
+                Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            }
+        }
+        Err(e) => {
+            // Log the error and return a 500 status code
+            eprintln!("Failed to get user from the database: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
 
 }
+
 
 pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
     while let Some(field) = multipart.next_field().await.unwrap() {
