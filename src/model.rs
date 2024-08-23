@@ -54,12 +54,12 @@ pub struct FriendListInfo{
 #[derive(Deserialize)]
 pub struct CharacterDetails{
     pub email:String,
-    pub interests:String,
-    pub values:String,
-    pub style:String,
-    pub traits:String,
-    pub commitment: String,
-    pub resolution: String,
+    pub interests:Option<String>,
+    pub values:Option<String>,
+    pub style:Option<String>,
+    pub traits:Option<String>,
+    pub commitment:Option<String> ,
+    pub resolution:Option<String>,
 }
 
 #[derive(Deserialize)]

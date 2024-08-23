@@ -369,12 +369,12 @@ pub async fn update_user_character_handler(
         Ok(user) => {
             let mut user: user::ActiveModel = user.unwrap().into();
             // user.score = Set(character_details.score.to_owned());
-            user.values = Set(Some(character_details.values));
-            user.style = Set(Some(character_details.style));
-            user.traits = Set(Some(character_details.traits));
-            user.commitment = Set(Some(character_details.commitment));
-            user.resolution = Set(Some(character_details.resolution));
-            user.interests = Set(Some(character_details.interests));
+            user.values = Set(character_details.values);
+            user.style = Set(character_details.style);
+            user.traits = Set(character_details.traits);
+            user.commitment = Set(character_details.commitment);
+            user.resolution = Set(character_details.resolution);
+            user.interests = Set(character_details.interests);
 
             let user = user.update(&db).await;
 
