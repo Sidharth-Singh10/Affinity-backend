@@ -423,7 +423,7 @@ pub async fn get_girl_request_handler(
 
     let girl_list = friend_list::Entity::find()
         .filter(friend_list::Column::BoyEmailId.contains(boy_email))
-        .filter(friend_list::Column::BoyEmailId.contains("0"))
+        .filter(friend_list::Column::Flag.contains("0"))
         .all(&db)
         .await;
 
@@ -449,7 +449,7 @@ pub async fn get_accepted_boys_handler(
 
     let boy_list = friend_list::Entity::find()
         .filter(friend_list::Column::BoyEmailId.contains(girl_email))
-        .filter(friend_list::Column::BoyEmailId.contains("1"))
+        .filter(friend_list::Column::Flag.contains("1"))
         .all(&db)
         .await;
 
