@@ -4,8 +4,7 @@ use crate::{
     bcrypts::{hash_password, verify_password},
     // db::create_user,
     model::{
-        CharacterDetails, Claims, FriendListInfo, GetUserInfo, GirlBoyInfo, LoginInfo,
-        SignUpInfo, UpadateScoreInfo,
+        CharacterDetails, Claims, FriendListInfo, GetUserInfo, GirlBoyInfo, LoginInfo, Matched, SignUpInfo, UpadateScoreInfo
     },
     utils::scripts::{compare_with_answer_file, docker_run},
 };
@@ -15,7 +14,7 @@ use axum::{
     response::IntoResponse,
     Extension, Json,
 };
-use entity::friend_list;
+use entity::{friend_list, matched};
 
 use chrono::Utc;
 use cookie::Cookie;
@@ -508,6 +507,56 @@ pub async fn change_flag_handler(
         }
     }
 }
+
+
+pub async fn create_matched_handler(Extension(db): Extension<DatabaseConnection>, Json(matched):Json<Matched>) -> impl IntoResponse
+{
+
+    let boy_email = matched.boy_email;
+    let girl_email = matched.girl_email;
+
+    let list = matched::ActiveModel{
+        boy_email_id: Set(boy_email),
+        girl_email_id: Set(girl_email),
+    ..Default::default()
+    };
+
+    match list.insert(&db).await {
+        Ok(_) => (StatusCode::ACCEPTED, Json("Friend added successfully")).into_response(),
+        Err(_) => {
+            (StatusCode::INTERNAL_SERVER_ERROR, Json("Failed add friend")).into_response()
+        }
+    }
+
+}
+
+pub async fn get_matched_handler (Extension(db): Extension<DatabaseConnection>, Json(info):Json<GirlBoyInfo>) -> impl IntoResponse
+{
+
+    let email = info.email;
+
+    let user = matched::Entity::find()
+        .filter(
+            matched::Column::BoyEmailId.contains(&email)
+            .or(matched::Column::GirlEmailId.contains(email))
+        )
+        .all(&db)
+        .await;
+
+    match user {
+        Ok(user) => {
+            Json(user).into_response()
+        }
+        Err(e) => {
+            // Log the error and return a 500 status code
+            eprintln!("Failed to get user from the database: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+
+}
+
+
 
 pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
     while let Some(field) = multipart.next_field().await.unwrap() {

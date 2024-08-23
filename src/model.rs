@@ -68,6 +68,12 @@ pub struct GirlBoyInfo{
 }
 
 #[derive(Deserialize, Serialize)]
+pub struct Matched{
+    pub boy_email: String,
+    pub girl_email: String,
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct Claims {
     pub sub: String,
     pub exp: usize,

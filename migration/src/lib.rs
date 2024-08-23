@@ -3,6 +3,7 @@ pub use sea_orm_migration::prelude::*;
 mod m20220101_000001_create_table;
 mod m20240822_161852_create_friendlist;
 mod m20240822_171309_add_field_to_friendlist;
+mod m20240823_075457_create_matched;
 
 pub struct Migrator;
 
@@ -13,6 +14,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20220101_000001_create_table::Migration),
             Box::new(m20240822_161852_create_friendlist::Migration),
             Box::new(m20240822_171309_add_field_to_friendlist::Migration),
+            Box::new(m20240823_075457_create_matched::Migration),
         ]
     }
 }
