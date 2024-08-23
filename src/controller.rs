@@ -471,10 +471,10 @@ pub async fn change_flag_handler(
     Extension(db): Extension<DatabaseConnection>,
     Json(boy_info): Json<GirlBoyInfo>,
 ) -> impl IntoResponse {
-    let email = boy_info.email;
+    let email:i32 = boy_info.email.parse().unwrap();
 
     let user = friend_list::Entity::find()
-        .filter(friend_list::Column::BoyEmailId.contains(email))
+        .filter(friend_list::Column::Id.eq(email))
         .one(&db)
         .await;
 
