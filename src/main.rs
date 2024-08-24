@@ -4,8 +4,8 @@ use axum::{
     Extension, Router,
 };
 use controller::{add_friend_handler, change_flag_handler, code_handler, create_matched_handler, get_accepted_boys_handler, get_all_users_handler, get_boys_handler, get_girl_request_handler, get_girls_handler, get_matched_handler, get_user_handler, login_handler, signup_handler, update_contest_score_handler, update_score_handler, update_user_character_handler};
-use sea_orm::{ColIdx, Database};
-use tower_http::cors::{Any, CorsLayer,AllowOrigin};
+use sea_orm::Database;
+use tower_http::cors::{ CorsLayer,AllowOrigin};
 mod bcrypts;
 mod controller;
 mod db;

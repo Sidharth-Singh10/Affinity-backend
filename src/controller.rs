@@ -9,7 +9,7 @@ use crate::{
     utils::scripts::{compare_with_answer_file, docker_run},
 };
 use axum::{
-    extract::{rejection::QueryRejection, Multipart},
+    extract:: Multipart,
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     Extension, Json,
@@ -448,7 +448,7 @@ pub async fn get_accepted_boys_handler(
     let girl_email = boy_info.email;
 
     let boy_list = friend_list::Entity::find()
-        .filter(friend_list::Column::BoyEmailId.contains(girl_email))
+        .filter(friend_list::Column::GirlEmailId.contains(girl_email))
         .filter(friend_list::Column::Flag.contains("1"))
         .order_by_desc(friend_list::Column::ContestScore)
         .all(&db)
