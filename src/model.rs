@@ -66,6 +66,10 @@ pub struct CharacterDetails{
 pub struct GirlBoyInfo{
     pub email:String,
 }
+#[derive(Deserialize)]
+pub struct GirlBoyInfoById{
+    pub id:String,
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct Matched{

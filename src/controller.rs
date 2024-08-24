@@ -4,7 +4,7 @@ use crate::{
     bcrypts::{hash_password, verify_password},
     // db::create_user,
     model::{
-        CharacterDetails, Claims, ContestInfo, FriendListInfo, GetUserInfo, GirlBoyInfo, LoginInfo, Matched, QuestionInfo, SignUpInfo, UpadateScoreInfo
+        CharacterDetails, Claims, ContestInfo, FriendListInfo, GetUserInfo, GirlBoyInfo, GirlBoyInfoById, LoginInfo, Matched, QuestionInfo, SignUpInfo, UpadateScoreInfo
     },
     utils::scripts::{compare_with_answer_file, docker_run},
 };
@@ -324,6 +324,28 @@ pub async fn get_user_handler(
     let email = get_user_info.email;
     let user = user::Entity::find()
         .filter(user::Column::Email.contains(email))
+        .one(&db)
+        .await;
+
+    match user {
+        Ok(user) => {
+            // Return the list of boys in JSON format
+            Json(user).into_response()
+        }
+        Err(e) => {
+            // Log the error and return a 500 status code
+            eprintln!("Failed to get user from the database: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+pub async fn get_user_byId_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(get_user_info): Json<GirlBoyInfoById>,
+) -> impl IntoResponse {
+    let id:i32 = get_user_info.id.parse().unwrap();
+    let user = user::Entity::find()
+        .filter(user::Column::Id.eq(id))
         .one(&db)
         .await;
 

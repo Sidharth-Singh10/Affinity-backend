@@ -3,7 +3,7 @@ use axum::{
     routing::{get, post, put},
     Extension, Router,
 };
-use controller::{add_friend_handler, change_flag_handler, code_handler, create_matched_handler, get_accepted_boys_handler, get_all_users_handler, get_boys_handler, get_girl_request_handler, get_girls_handler, get_matched_handler, get_user_handler, login_handler, signup_handler, update_contest_score_handler, update_score_handler, update_user_character_handler};
+use controller::{add_friend_handler, change_flag_handler, code_handler, create_matched_handler, get_accepted_boys_handler, get_all_users_handler, get_boys_handler, get_girl_request_handler, get_girls_handler, get_matched_handler, get_user_byId_handler, get_user_handler, login_handler, signup_handler, update_contest_score_handler, update_score_handler, update_user_character_handler};
 use sea_orm::Database;
 use tower_http::cors::{ CorsLayer,AllowOrigin};
 mod bcrypts;
@@ -31,7 +31,6 @@ async fn main() {
         .await
         .expect("could not connect");
     let app: Router<()> = Router::new()
-        
         .route("/login", post(login_handler))
         // .route("/decode", get(decode_jwt))
         .route("/signup", post(signup_handler))
@@ -49,6 +48,7 @@ async fn main() {
         .route("/creatematch",post(create_matched_handler))
         .route("/getmatched",post(get_matched_handler))
         .route("/updatecontestscore",put(update_contest_score_handler)) 
+        .route("/getuserbyid",post(get_user_byId_handler))
         .layer(cors)
         .layer(Extension(db));
 
