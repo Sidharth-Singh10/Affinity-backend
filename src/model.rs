@@ -73,6 +73,20 @@ pub struct Matched{
     pub girl_email: String,
 }
 
+#[derive(Deserialize)]
+pub struct QuestionInfo
+{
+    pub testcase: String,
+}
+#[derive(Deserialize)]
+pub struct ContestInfo
+{
+    pub id:String,
+    pub contestscore:String,
+}
+
+
+
 #[derive(Deserialize, Serialize)]
 pub struct Claims {
     pub sub: String,

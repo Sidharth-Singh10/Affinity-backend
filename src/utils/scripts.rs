@@ -4,10 +4,14 @@ use std::process::Stdio;
 use tokio::fs;
 use tokio::process::Command;
 
-pub async fn docker_run(args: &[&str]) -> io::Result<String> {
+use crate::model::QuestionInfo;
+
+pub async fn docker_run(args: &[&str],filename:String) -> io::Result<String> {
     let script_path = "./dockerpyfile.sh";
 
     let convert_path = "./convert.sh";
+
+    let filename = format!("./testcase/{}",filename);
 
     let output2 = Command::new("bash")
         .arg(convert_path)
@@ -22,6 +26,7 @@ pub async fn docker_run(args: &[&str]) -> io::Result<String> {
     let output = Command::new("bash")
         .arg(script_path)
         .args(args)
+        .arg(filename.as_str())
         .stdout(Stdio::piped())
         .output()
         .await?;

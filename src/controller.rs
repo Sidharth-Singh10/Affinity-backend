@@ -4,12 +4,12 @@ use crate::{
     bcrypts::{hash_password, verify_password},
     // db::create_user,
     model::{
-        CharacterDetails, Claims, FriendListInfo, GetUserInfo, GirlBoyInfo, LoginInfo, Matched, SignUpInfo, UpadateScoreInfo
+        CharacterDetails, Claims, ContestInfo, FriendListInfo, GetUserInfo, GirlBoyInfo, LoginInfo, Matched, QuestionInfo, SignUpInfo, UpadateScoreInfo
     },
     utils::scripts::{compare_with_answer_file, docker_run},
 };
 use axum::{
-    extract::Multipart,
+    extract::{rejection::QueryRejection, Multipart},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     Extension, Json,
@@ -20,7 +20,7 @@ use chrono::Utc;
 use cookie::Cookie;
 use entity::user;
 use jsonwebtoken::{encode, EncodingKey, Header};
-use sea_orm::{ActiveModelTrait, EntityTrait};
+use sea_orm::{ActiveModelTrait, EntityTrait, QueryOrder};
 use sea_orm::{DatabaseConnection, Set};
 use tokio::{
     fs::{create_dir_all, File},
@@ -450,6 +450,7 @@ pub async fn get_accepted_boys_handler(
     let boy_list = friend_list::Entity::find()
         .filter(friend_list::Column::BoyEmailId.contains(girl_email))
         .filter(friend_list::Column::Flag.contains("1"))
+        .order_by_desc(friend_list::Column::ContestScore)
         .all(&db)
         .await;
 
@@ -471,7 +472,7 @@ pub async fn change_flag_handler(
     Extension(db): Extension<DatabaseConnection>,
     Json(boy_info): Json<GirlBoyInfo>,
 ) -> impl IntoResponse {
-    let email:i32 = boy_info.email.parse().unwrap();
+    let email: i32 = boy_info.email.parse().unwrap();
 
     let user = friend_list::Entity::find()
         .filter(friend_list::Column::Id.eq(email))
@@ -508,57 +509,87 @@ pub async fn change_flag_handler(
     }
 }
 
-
-pub async fn create_matched_handler(Extension(db): Extension<DatabaseConnection>, Json(matched):Json<Matched>) -> impl IntoResponse
-{
-
+pub async fn create_matched_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(matched): Json<Matched>,
+) -> impl IntoResponse {
     let boy_email = matched.boy_email;
     let girl_email = matched.girl_email;
 
-    let list = matched::ActiveModel{
+    let list = matched::ActiveModel {
         boy_email_id: Set(boy_email),
         girl_email_id: Set(girl_email),
-    ..Default::default()
+        ..Default::default()
     };
 
     match list.insert(&db).await {
         Ok(_) => (StatusCode::ACCEPTED, Json("Friend added successfully")).into_response(),
-        Err(_) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json("Failed add friend")).into_response()
-        }
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json("Failed add friend")).into_response(),
     }
-
 }
 
-pub async fn get_matched_handler (Extension(db): Extension<DatabaseConnection>, Json(info):Json<GirlBoyInfo>) -> impl IntoResponse
-{
-
+pub async fn get_matched_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(info): Json<GirlBoyInfo>,
+) -> impl IntoResponse {
     let email = info.email;
 
     let user = matched::Entity::find()
         .filter(
-            matched::Column::BoyEmailId.contains(&email)
-            .or(matched::Column::GirlEmailId.contains(email))
+            matched::Column::BoyEmailId
+                .contains(&email)
+                .or(matched::Column::GirlEmailId.contains(email)),
         )
         .all(&db)
         .await;
 
     match user {
-        Ok(user) => {
-            Json(user).into_response()
-        }
+        Ok(user) => Json(user).into_response(),
         Err(e) => {
             // Log the error and return a 500 status code
             eprintln!("Failed to get user from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
-
 }
 
 
+pub async fn update_contest_score_handler(Extension(db): Extension<DatabaseConnection>,Json(contest_info): Json<ContestInfo>) -> impl IntoResponse {
 
-pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
+    let id:i32 = contest_info.id.parse().unwrap();
+
+
+    let user = friend_list::Entity::find()
+        .filter(friend_list::Column::Id.eq(id))
+        .one(&db)
+        .await;
+
+    match user {
+
+        Ok(user) => {
+            let mut user:friend_list::ActiveModel = user.unwrap().into();
+
+            user.contest_score = Set(contest_info.contestscore);
+            let user = user.update(&db).await;
+
+            match user {
+                Ok(_) => StatusCode::OK.into_response(),
+                Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            }
+
+
+        }
+
+        Err(e) =>
+        {
+            eprintln!("Failed to get user from the database: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn code_handler( mut multipart: Multipart) ->
+Result<impl IntoResponse, (StatusCode, String)> {
     while let Some(field) = multipart.next_field().await.unwrap() {
         let filename = field
             .file_name()
@@ -586,11 +617,12 @@ pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
             .await
             .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
 
-        let add = format!("./uploads/{}", filename);
+        let add = format!("./uploads/{}", filename.clone());
 
         let args = [add.as_str()];
 
-        match docker_run(&args).await {
+
+        match docker_run(&args, filename.clone()).await {
             Ok(stdout) => match compare_with_answer_file(&stdout, &filename).await {
                 Ok(true) => {
                     println!("The output matches the answer file.");

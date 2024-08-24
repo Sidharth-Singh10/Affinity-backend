@@ -14,6 +14,7 @@ fi
 
 # Read the content of the file
 file_content=$(cat "$1")
+stdin=$(cat "$2")
 
 # Escape double quotes in the content
 escaped_content=$(echo "$file_content" | sed 's/"/\\"/g')
@@ -22,7 +23,7 @@ escaped_content=$(echo "$file_content" | sed 's/"/\\"/g')
 json_payload=$(cat <<EOF
 {
   "language": "python",
-  "stdin" :"5",
+  "stdin" : "$stdin",
   "files": [{
     "name": "main.py",
     "content": $file_content 
