@@ -19,6 +19,7 @@ async fn main() {
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_origin(AllowOrigin::exact("http://localhost:5173".parse().unwrap()))// Allow only this specific origin   
         .allow_origin(AllowOrigin::exact("http://ec2-13-126-149-80.ap-south-1.compute.amazonaws.com".parse().unwrap())) // AWS EC2 origin
+        .allow_origin(AllowOrigin::exact("http://ec2-13-126-149-80.ap-south-1.compute.amazonaws.com:5173".parse().unwrap()))
         .allow_headers([
             http::header::ACCEPT,
             http::header::CONTENT_TYPE,
