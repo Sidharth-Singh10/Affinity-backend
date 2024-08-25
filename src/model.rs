@@ -78,11 +78,6 @@ pub struct Matched{
 }
 
 #[derive(Deserialize)]
-pub struct QuestionInfo
-{
-    pub testcase: String,
-}
-#[derive(Deserialize)]
 pub struct ContestInfo
 {
     pub id:String,

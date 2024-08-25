@@ -4,8 +4,6 @@ use std::process::Stdio;
 use tokio::fs;
 use tokio::process::Command;
 
-use crate::model::QuestionInfo;
-
 pub async fn docker_run(args: &[&str],filename:String) -> io::Result<String> {
     let script_path = "./dockerpyfile.sh";
 
@@ -58,21 +56,7 @@ pub async fn docker_run(args: &[&str],filename:String) -> io::Result<String> {
         Err(io::Error::new(io::ErrorKind::Other, stderr.to_string()))
     }
 }
-// pub async fn compare_with_answer_file(stdout: &str, answer_file_path: &str) -> io::Result<bool> {
-//     let add = format!("./ans/{}", answer_file_path);
 
-//     let answer = fs::read_to_string(add).await;
-
-//     match answer {
-//         Ok(answer) => {
-//             Ok(stdout.trim() == answer.trim())
-//         },
-//         Err(e) => {
-//             println!("error reading answer file");
-//             String::new()
-//         }
-//     };
-// }
 pub async fn compare_with_answer_file(stdout: &str, answer_file_path: &str) -> io::Result<bool> {
     let add = format!("./ans/{}", answer_file_path);
 

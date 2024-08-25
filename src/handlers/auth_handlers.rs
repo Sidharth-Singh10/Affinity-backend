@@ -174,7 +174,7 @@ pub async fn login_handler(
 
 
 
-pub async fn decode_jwt(header_map: HeaderMap) -> Result<Json<String>, StatusCode> {
+pub fn decode_jwt(header_map: HeaderMap) -> Result<Json<String>, StatusCode> {
     if let Some(auth_header) = header_map.get("Authorization") {
         if let Ok(auth_header_str) = auth_header.to_str() {
             if auth_header_str.starts_with("Bearer ") {
