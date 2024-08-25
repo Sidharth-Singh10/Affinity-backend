@@ -1,15 +1,16 @@
-use std::path::PathBuf;
+use std:: path::PathBuf;
 
 use crate::{
     bcrypts::{hash_password, verify_password},
     // db::create_user,
     model::{
-        CharacterDetails, Claims, ContestInfo, FriendListInfo, GetUserInfo, GirlBoyInfo, GirlBoyInfoById, LoginInfo, Matched, QuestionInfo, SignUpInfo, UpadateScoreInfo
+        CharacterDetails, Claims, ContestInfo, FriendListInfo, GetUserInfo, GirlBoyInfo,
+        GirlBoyInfoById, LoginInfo, Matched,  SignUpInfo, UpadateScoreInfo,
     },
     utils::scripts::{compare_with_answer_file, docker_run},
 };
 use axum::{
-    extract:: Multipart,
+    extract::Multipart,
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     Extension, Json,
@@ -20,6 +21,7 @@ use chrono::Utc;
 use cookie::Cookie;
 use entity::user;
 use jsonwebtoken::{encode, EncodingKey, Header};
+use migration::Expr;
 use sea_orm::{ActiveModelTrait, EntityTrait, QueryOrder};
 use sea_orm::{DatabaseConnection, Set};
 use tokio::{
@@ -343,7 +345,7 @@ pub async fn get_user_byId_handler(
     Extension(db): Extension<DatabaseConnection>,
     Json(get_user_info): Json<GirlBoyInfoById>,
 ) -> impl IntoResponse {
-    let id:i32 = get_user_info.id.parse().unwrap();
+    let id: i32 = get_user_info.id.parse().unwrap();
     let user = user::Entity::find()
         .filter(user::Column::Id.eq(id))
         .one(&db)
@@ -539,14 +541,108 @@ pub async fn create_matched_handler(
     let girl_email = matched.girl_email;
 
     let list = matched::ActiveModel {
-        boy_email_id: Set(boy_email),
-        girl_email_id: Set(girl_email),
+        boy_email_id: Set(boy_email.clone()),
+        girl_email_id: Set(girl_email.clone()),
         ..Default::default()
     };
 
-    match list.insert(&db).await {
-        Ok(_) => (StatusCode::ACCEPTED, Json("Friend added successfully")).into_response(),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json("Failed add friend")).into_response(),
+    if let Err(e) = list.insert(&db).await {
+        println!("{}", e);
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json("Failed to add friend"),
+        )
+            .into_response();
+    }
+
+    // Update flag to 0 for all matching boys where the flag is 1
+    let flag_update_result = friend_list::Entity::update_many()
+        .filter(friend_list::Column::GirlEmailId.eq(girl_email.clone()))
+        .filter(friend_list::Column::Flag.eq("1".to_string()))
+        .col_expr(friend_list::Column::Flag, Expr::value("0".to_string()))
+        .exec(&db)
+        .await;
+
+    // Handle the result of updating the flags
+    if let Err(_) = flag_update_result {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json("Failed to update flags to 0"),
+        )
+            .into_response();
+    }
+
+    // Find the user from the friend_list
+    let user_result = friend_list::Entity::find()
+        .filter(friend_list::Column::BoyEmailId.eq(boy_email.clone()))
+        .filter(friend_list::Column::GirlEmailId.eq(girl_email.clone()))
+        .one(&db)
+        .await;
+
+    // Handle the result of finding the user
+    match user_result {
+        Ok(Some(user)) => {
+            let mut user: friend_list::ActiveModel = user.into();
+            user.flag = Set("2".to_string());
+
+            if let Err(_) = user.update(&db).await {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json("Failed to update flag to 2"),
+                )
+                    .into_response();
+            }
+
+            // Success response after both insert and update
+            (
+                StatusCode::ACCEPTED,
+                Json("Friend added and flag updated successfully"),
+            )
+                .into_response()
+        }
+        Ok(None) => {
+            // User not found
+            (
+                StatusCode::NOT_FOUND,
+                Json("User not found for the provided emails"),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            // Log the error and return a 500 status code
+            eprintln!("Failed to get user from the database: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json("Failed to retrieve user from the database"),
+            )
+                .into_response()
+        }
+    }
+}
+
+pub async fn reject_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(matched): Json<Matched>,
+) -> impl IntoResponse {
+    let boy_email = matched.boy_email;
+    let girl_email = matched.girl_email;
+
+    let flag_update_result = friend_list::Entity::update_many()
+        .filter(friend_list::Column::GirlEmailId.eq(girl_email.clone()))
+        .filter(friend_list::Column::BoyEmailId.contains(boy_email))
+        .filter(friend_list::Column::Flag.eq("0".to_string()))
+        .col_expr(friend_list::Column::Flag, Expr::value("2".to_string()))
+        .exec(&db)
+        .await;
+
+    if let Err(_) = flag_update_result {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json("Failed to update flags to 0"),
+        )
+            .into_response();
+    } else {
+        return (StatusCode::OK, Json("SUCESS")).into_response();
     }
 }
 
@@ -575,11 +671,11 @@ pub async fn get_matched_handler(
     }
 }
 
-
-pub async fn update_contest_score_handler(Extension(db): Extension<DatabaseConnection>,Json(contest_info): Json<ContestInfo>) -> impl IntoResponse {
-
-    let id:i32 = contest_info.id.parse().unwrap();
-
+pub async fn update_contest_score_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(contest_info): Json<ContestInfo>,
+) -> impl IntoResponse {
+    let id: i32 = contest_info.id.parse().unwrap();
 
     let user = friend_list::Entity::find()
         .filter(friend_list::Column::Id.eq(id))
@@ -587,9 +683,8 @@ pub async fn update_contest_score_handler(Extension(db): Extension<DatabaseConne
         .await;
 
     match user {
-
         Ok(user) => {
-            let mut user:friend_list::ActiveModel = user.unwrap().into();
+            let mut user: friend_list::ActiveModel = user.unwrap().into();
 
             user.contest_score = Set(contest_info.contestscore);
             let user = user.update(&db).await;
@@ -598,20 +693,26 @@ pub async fn update_contest_score_handler(Extension(db): Extension<DatabaseConne
                 Ok(_) => StatusCode::OK.into_response(),
                 Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
             }
-
-
         }
 
-        Err(e) =>
-        {
+        Err(e) => {
             eprintln!("Failed to get user from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
 }
 
-pub async fn code_handler( mut multipart: Multipart) ->
-Result<impl IntoResponse, (StatusCode, String)> {
+pub async fn final_match_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Json(matched): Json<Matched>,
+) -> impl IntoResponse {
+    let boy_email = matched.boy_email;
+    let girl_email = matched.girl_email;
+}
+
+pub async fn code_handler(
+    mut multipart: Multipart,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
     while let Some(field) = multipart.next_field().await.unwrap() {
         let filename = field
             .file_name()
@@ -642,7 +743,6 @@ Result<impl IntoResponse, (StatusCode, String)> {
         let add = format!("./uploads/{}", filename.clone());
 
         let args = [add.as_str()];
-
 
         match docker_run(&args, filename.clone()).await {
             Ok(stdout) => match compare_with_answer_file(&stdout, &filename).await {
