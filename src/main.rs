@@ -26,7 +26,7 @@ async fn main() {
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_origin(AllowOrigin::exact("http://ec2-13-232-176-18.ap-south-1.compute.amazonaws.com:5173".parse().unwrap()))
-        .allow_origin(AllowOrigin::exact("http://ec2-13-232-176-18.ap-south-1.compute.amazonaws.com:5173".parse().unwrap()))
+        .allow_origin(AllowOrigin::exact("http://ec2-13-232-176-18.ap-south-1.compute.amazonaws.com".parse().unwrap()))
         .allow_headers([
             http::header::ACCEPT,
             http::header::CONTENT_TYPE,
