@@ -28,3 +28,10 @@ Make sure you have the following installed:
    ```
    cargo build
    cargo run
+   ```
+### Running in Docker
+   ```
+   docker-compose up --build
+   ```
+## Contributing
+   Read [CONTRIBUTING.md](https://github.com/Sidharth-Singh10/Affinity-backend/blob/main/CONTRIBUTING.md)
