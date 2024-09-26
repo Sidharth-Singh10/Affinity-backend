@@ -1,6 +1,6 @@
-# Contributing to Overengineered Backend
+# Contributing to Affinity Backend
 
-We are excited that you want to contribute to **Overengineered Backend**! This document will guide you through the contribution process, from reporting issues to submitting pull requests.
+We are excited that you want to contribute to **Affinity Backend**! This document will guide you through the contribution process, from reporting issues to submitting pull requests.
 
 ## Table of Contents
 - [How to Contribute](#how-to-contribute)
