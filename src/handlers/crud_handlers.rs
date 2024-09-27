@@ -1,12 +1,12 @@
-use crate::model::{ContestInfo, FriendListInfo, Matched};
 use crate::model::{CharacterDetails, GetUserInfo, GirlBoyInfo, GirlBoyInfoById, UpadateScoreInfo};
+use crate::model::{ContestInfo, FriendListInfo, Matched};
 use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
-use entity::{friend_list, matched};
 use entity::user;
+use entity::{friend_list, matched};
 use migration::Expr;
-use sea_orm::{QueryFilter, QueryOrder};
 use sea_orm::{ActiveModelTrait, EntityTrait};
 use sea_orm::{DatabaseConnection, Set};
+use sea_orm::{QueryFilter, QueryOrder};
 
 use sea_orm::ColumnTrait;
 
@@ -413,9 +413,6 @@ pub async fn create_matched_handler(
     }
 }
 
-
-
-
 pub async fn reject_handler(
     Extension(db): Extension<DatabaseConnection>,
     Json(matched): Json<Matched>,
@@ -472,5 +469,3 @@ pub async fn update_contest_score_handler(
         }
     }
 }
-
-
