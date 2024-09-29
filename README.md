@@ -35,3 +35,12 @@ Make sure you have the following installed:
    ```
 ## Contributing
    Read [CONTRIBUTING.md](https://github.com/Sidharth-Singh10/Affinity-backend/blob/main/CONTRIBUTING.md)
+
+## Affinity Project
+
+1. **Architecture**
+   
+![image](https://github.com/user-attachments/assets/402a9b69-eccd-478b-9c0e-50810200c28d)
+3. **Links**
+- Frontend: `https://github.com/rishyym0927/Affinity_frontend` 
+
