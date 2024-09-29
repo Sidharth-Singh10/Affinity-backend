@@ -17,7 +17,7 @@ use crate::{
     bcrypts::{hash_password, verify_password},
     configs::totp_config::totp,
     model::{Claims, LoginInfo, SignUpInfo},
-    utils::verify_email::EmailOTP,
+    utils::{constants::JWT_SECRET, verify_email::EmailOTP},
 };
 
 pub async fn signup_handler(
@@ -158,7 +158,7 @@ pub async fn login_handler(
         let token = match encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret("696969".as_ref()),
+            &EncodingKey::from_secret(JWT_SECRET.as_ref()),
         ) {
             Ok(tok) => tok,
             Err(e) => {
@@ -235,7 +235,7 @@ pub fn _decode_jwt(header_map: HeaderMap) -> Result<Json<String>, StatusCode> {
 
                 match decode::<Claims>(
                     &token,
-                    &DecodingKey::from_secret("696969".as_ref()),
+                    &DecodingKey::from_secret(JWT_SECRET.as_ref()),
                     &Validation::default(),
                 ) {
                     Ok(token_data) => {
