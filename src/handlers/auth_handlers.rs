@@ -1,12 +1,24 @@
-use axum::{http::{HeaderMap, StatusCode}, response::IntoResponse, Extension, Json};
+use std::collections::HashMap;
+
+use axum::{
+    extract::Query,
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
+    Extension, Json,
+};
 use chrono::Utc;
 use cookie::Cookie;
 use entity::user;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
-use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, Set,ActiveModelTrait,ColumnTrait};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use uuid::Uuid;
 
-use crate::{bcrypts::{hash_password, verify_password}, model::{Claims, LoginInfo, SignUpInfo}};
+use crate::{
+    bcrypts::{hash_password, verify_password},
+    configs::totp_config::totp,
+    model::{Claims, LoginInfo, SignUpInfo},
+    utils::verify_email::EmailOTP,
+};
 
 pub async fn signup_handler(
     Extension(db): Extension<DatabaseConnection>,
@@ -115,13 +127,10 @@ pub async fn signup_handler(
     }
 }
 
-
-
 pub async fn login_handler(
     Extension(db): Extension<DatabaseConnection>,
     Json(login_info): Json<LoginInfo>,
 ) -> impl IntoResponse {
-
     let email = &login_info.email;
     let password = &login_info.password;
 
@@ -171,10 +180,54 @@ pub async fn login_handler(
     })
 }
 
+pub async fn otp_handler(
+    Query(params): Query<HashMap<String, String>>,
+) -> Result<Json<String>, StatusCode> {
+    let otp_result2 = match totp() {
+        Ok(otp) => otp,
+        Err(err) => {
+            eprintln!("Error generating TOTP: {}", err);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
 
+    let otp = params.get("otp");
 
+    match otp {
+        Some(otp) => {
+            let check = otp_result2.check_current(otp).unwrap();
+            if check {
+                // (StatusCode::OK, Json("otp verified successfully"))
+                Ok(Json("Otp verified".to_string()))
+            } else {
+                Err(StatusCode::UNAUTHORIZED)
+            }
+        }
+        None => {
+            // Generate the current TOTP
+            match otp_result2.generate_current() {
+                Ok(otp) => {
+                    // Return the OTP as a JSON response with status 200 OK
+                    let username = params.get("username").unwrap();
+                    let to = params.get("email").unwrap();
 
-pub fn decode_jwt(header_map: HeaderMap) -> Result<Json<String>, StatusCode> {
+                    let sent_email =
+                        EmailOTP::new(username.to_string(), otp.to_string(), to.to_string());
+
+                    let _ = sent_email.send_otp().await;
+
+                    Ok(Json("Otp sent successfully".to_string()))
+                }
+                Err(_) => {
+                    // If there's an error generating the OTP, return 500 Internal Server Error
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
+            }
+        }
+    }
+}
+
+pub fn _decode_jwt(header_map: HeaderMap) -> Result<Json<String>, StatusCode> {
     if let Some(auth_header) = header_map.get("Authorization") {
         if let Ok(auth_header_str) = auth_header.to_str() {
             if auth_header_str.starts_with("Bearer ") {
