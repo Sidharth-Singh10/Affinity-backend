@@ -3,21 +3,29 @@ use std::collections::HashMap;
 use axum::{
     extract::Query,
     http::{HeaderMap, StatusCode},
+    middleware::future::FromExtractorResponseFuture,
     response::IntoResponse,
     Extension, Json,
 };
 use chrono::Utc;
 use cookie::Cookie;
-use entity::user;
+use entity::{pass_reset, user};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
+    TransactionTrait,
+};
 use uuid::Uuid;
 
 use crate::{
     bcrypts::{hash_password, verify_password},
     configs::totp_config::totp,
     model::{Claims, LoginInfo, SignUpInfo},
-    utils::{constants::JWT_SECRET, verify_email::EmailOTP},
+    utils::{
+        constants::{JWT_SECRET, PASS_RESET_LINK},
+        pass_reset::PassReset,
+        verify_email::EmailOTP,
+    },
 };
 
 pub async fn signup_handler(
@@ -178,6 +186,149 @@ pub async fn login_handler(
     } else {
         StatusCode::UNAUTHORIZED.into_response()
     })
+}
+
+pub async fn send_pass_reset_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Result<Json<String>, StatusCode> {
+    let email = match params.get("email") {
+        Some(email) => email,
+        None => {
+            eprintln!("No email provided in the request");
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
+
+    if let Some(user) = user::Entity::find()
+        .filter(user::Column::Email.eq(email))
+        .one(&db)
+        .await
+        .unwrap()
+    {
+        let token: String =
+            rand::Rng::sample_iter(rand::thread_rng(), &rand::distributions::Alphanumeric)
+                .take(64)
+                .map(char::from)
+                .collect();
+
+        let hashed_token = match hash_password(token.as_str()) {
+            Ok(hash) => hash,
+            Err(e) => {
+                eprintln!("Password could not be hashed -> {}", e);
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        };
+
+        let token_expiry = Utc::now() + chrono::Duration::hours(1); // Adds 1 hour to the current time
+        let token_expiry_timestamp = token_expiry.timestamp(); // Converts to i64 (seconds since Unix epoch)
+
+        let username = user.user_name;
+        let reset_link = format!("{}?token={}", PASS_RESET_LINK.to_string(), token);
+        let sent_email = PassReset::new(username.to_string(), reset_link, email.to_string());
+
+        let _ = sent_email.send_pass_reset().await;
+
+        let pass_reset_model = pass_reset::ActiveModel {
+            user_id: Set(user.id),
+            token: Set(hashed_token),
+            token_expiry: Set(token_expiry_timestamp),
+            ..Default::default()
+        };
+
+        match pass_reset_model.insert(&db).await {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("Failed to insert pass_reset into the database: {}", e);
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        }
+    }
+
+    // Temporarily return a success message
+    Ok(Json(format!("Password reset link sent to {}", email)))
+}
+
+pub async fn new_password_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Result<Json<String>, StatusCode> {
+    if let (Some(reset_token), Some(hashed_password)) =
+        (params.get("token"), params.get("password"))
+    {
+        let hashed_reset_token = match hash_password(reset_token) {
+            Ok(hashed) => hashed,                                    // Successfully hashed
+            Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR), // Handle error
+        };
+
+        let user = pass_reset::Entity::find()
+            .filter(pass_reset::Column::Token.contains(&hashed_reset_token))
+            .one(&db)
+            .await
+            .unwrap();
+
+        let user_id = match user{
+            Some(entity) => entity.user_id,
+            None => return Err(StatusCode::NOT_FOUND),
+        };
+
+        
+    
+
+        let txn = db.begin().await.unwrap();
+
+        let tokens = pass_reset::Entity::find()
+            .filter(pass_reset::Column::UserId.eq(user_id))
+            .all(&txn)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            let matched_token = tokens.into_iter().find(|row| row.token == *hashed_reset_token);
+
+            if let Some(matched_token) = matched_token {
+                // Check token expiry
+                let current_time = Utc::now().timestamp();
+                if matched_token.token_expiry < current_time {
+                    txn.rollback().await.unwrap();
+                    return Err(StatusCode::BAD_REQUEST); // Token has expired
+                }
+    
+                // Delete all tokens for the user
+                pass_reset::Entity::delete_many()
+                    .filter(pass_reset::Column::UserId.eq(user_id))
+                    .exec(&txn)
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    
+                // Update the user's password
+                let mut user_model = user::Entity::find_by_id(user_id)
+                    .one(&txn)
+                    .await
+                    .unwrap();
+                
+                    let mut user: user::ActiveModel = user_model.unwrap().into();
+
+                    user.password = Set(hashed_password.to_owned());
+                    user.update(&txn)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+                // Commit the transaction
+                txn.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+               return Ok(Json("Password updated successfully".to_string()));
+            } else {
+                // Token not found
+                txn.rollback().await.unwrap();
+               return Err(StatusCode::BAD_REQUEST);
+            }
+
+    } else {
+        // One or both are missing
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
 }
 
 pub async fn otp_handler(

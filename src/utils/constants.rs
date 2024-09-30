@@ -22,4 +22,7 @@ pub static ref OTP_SECRET: String = {
 pub static ref JWT_SECRET: String ={
     env::var("JWT_SECRET").expect("JWT_SECRET must be set")
 };
+pub static ref PASS_RESET_LINK: String ={
+    env::var("PASS_RESET_LINK").expect("PASS_RESET_LINK must be set")
+};
 }
