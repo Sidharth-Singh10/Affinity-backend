@@ -4,7 +4,9 @@ use axum::{
     Extension, Router,
 };
 use handlers::{
-    auth_handlers::{login_handler, new_password_handler, otp_handler, send_pass_reset_handler, signup_handler},
+    auth_handlers::{
+        login_handler, new_password_handler, otp_handler, send_pass_reset_handler, signup_handler,
+    },
     cp_handler::code_handler,
     crud_handlers::{
         add_friend_handler, change_flag_handler, create_matched_handler, get_accepted_boys_handler,
@@ -23,7 +25,6 @@ mod utils;
 
 #[tokio::main]
 async fn main() {
-    
     let db_string = (*utils::constants::DATABASE_URL).clone();
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])

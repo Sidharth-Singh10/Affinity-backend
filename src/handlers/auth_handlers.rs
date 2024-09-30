@@ -267,13 +267,10 @@ pub async fn new_password_handler(
             .await
             .unwrap();
 
-        let user_id = match user{
+        let user_id = match user {
             Some(entity) => entity.user_id,
             None => return Err(StatusCode::NOT_FOUND),
         };
-
-        
-    
 
         let txn = db.begin().await.unwrap();
 
@@ -283,52 +280,50 @@ pub async fn new_password_handler(
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-            let matched_token = tokens.into_iter().find(|row| row.token == *hashed_reset_token);
+        let matched_token = tokens
+            .into_iter()
+            .find(|row| row.token == *hashed_reset_token);
 
-            if let Some(matched_token) = matched_token {
-                // Check token expiry
-                let current_time = Utc::now().timestamp();
-                if matched_token.token_expiry < current_time {
-                    txn.rollback().await.unwrap();
-                    return Err(StatusCode::BAD_REQUEST); // Token has expired
-                }
-    
-                // Delete all tokens for the user
-                pass_reset::Entity::delete_many()
-                    .filter(pass_reset::Column::UserId.eq(user_id))
-                    .exec(&txn)
-                    .await
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    
-    
-                // Update the user's password
-                let mut user_model = user::Entity::find_by_id(user_id)
-                    .one(&txn)
-                    .await
-                    .unwrap();
-                
-                    let mut user: user::ActiveModel = user_model.unwrap().into();
-
-                    user.password = Set(hashed_password.to_owned());
-                    user.update(&txn)
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    
-                // Commit the transaction
-                txn.commit().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    
-               return Ok(Json("Password updated successfully".to_string()));
-            } else {
-                // Token not found
+        if let Some(matched_token) = matched_token {
+            // Check token expiry
+            let current_time = Utc::now().timestamp();
+            if matched_token.token_expiry < current_time {
                 txn.rollback().await.unwrap();
-               return Err(StatusCode::BAD_REQUEST);
+                return Err(StatusCode::BAD_REQUEST); // Token has expired
             }
 
+            // Delete all tokens for the user
+            pass_reset::Entity::delete_many()
+                .filter(pass_reset::Column::UserId.eq(user_id))
+                .exec(&txn)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            // Update the user's password
+            let mut user_model = user::Entity::find_by_id(user_id).one(&txn).await.unwrap();
+
+            let mut user: user::ActiveModel = user_model.unwrap().into();
+
+            user.password = Set(hashed_password.to_owned());
+            user.update(&txn)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            // Commit the transaction
+            txn.commit()
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            return Ok(Json("Password updated successfully".to_string()));
+        } else {
+            // Token not found
+            txn.rollback().await.unwrap();
+            return Err(StatusCode::BAD_REQUEST);
+        }
     } else {
         // One or both are missing
         return Err(StatusCode::BAD_REQUEST);
     }
-
 }
 
 pub async fn otp_handler(

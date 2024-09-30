@@ -4,12 +4,12 @@ use std::process::Stdio;
 use tokio::fs;
 use tokio::process::Command;
 
-pub async fn docker_run(args: &[&str],filename:String) -> io::Result<String> {
+pub async fn docker_run(args: &[&str], filename: String) -> io::Result<String> {
     let script_path = "./dockerpyfile.sh";
 
     let convert_path = "./convert.sh";
 
-    let filename = format!("./testcase/{}",filename);
+    let filename = format!("./testcase/{}", filename);
 
     let output2 = Command::new("bash")
         .arg(convert_path)
@@ -61,9 +61,7 @@ pub async fn compare_with_answer_file(stdout: &str, answer_file_path: &str) -> i
     let add = format!("./ans/{}", answer_file_path);
 
     match fs::read_to_string(add).await {
-        Ok(answer) => {
-            Ok(stdout.trim() == answer.trim())
-        },
+        Ok(answer) => Ok(stdout.trim() == answer.trim()),
         Err(e) => {
             println!("error reading answer file: {}", e);
             Err(e)

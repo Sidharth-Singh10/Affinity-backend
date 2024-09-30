@@ -35,5 +35,5 @@ enum Matched {
     Table,
     Id,
     GirlEmailId,
-    BoyEmailId
+    BoyEmailId,
 }
