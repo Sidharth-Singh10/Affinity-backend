@@ -2615,6 +2615,7 @@ dependencies = [
  "lazy_static",
  "lettre",
  "migration",
+ "rand",
  "sea-orm",
  "serde",
  "serde_json",

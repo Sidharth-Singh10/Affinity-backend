@@ -29,4 +29,5 @@ json = "0.12.4"
 lettre = { version = "0.11.9", features = ["tokio1-native-tls"] }
 handlebars = "6.1.0"
 totp-rs = "5.6.0"
+rand = "0.8.5"
 
