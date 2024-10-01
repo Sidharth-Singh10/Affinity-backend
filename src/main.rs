@@ -63,7 +63,7 @@ async fn main() {
         .route("/login", post(login_handler))
         // .route("/decode", get(decode_jwt))
         .route("/signup", post(signup_handler))
-        .route("/runcode", post(code_handler))
+        // .route("/runcode", post(code_handler))
         .route("/getuser", post(get_user_handler))
         .route("/getboys", get(get_boys_handler))
         .route("/getgirls", get(get_girls_handler))
