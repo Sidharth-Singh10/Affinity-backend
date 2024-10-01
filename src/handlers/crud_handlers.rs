@@ -429,7 +429,7 @@ pub async fn reject_handler(
         .await;
 
     if let Err(_) = flag_update_result {
-         (
+        (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json("Failed to update flags to 0"),
         )

@@ -5,10 +5,7 @@ use tokio::fs::{create_dir_all, File};
 use tokio::io::AsyncWriteExt;
 
 use crate::utils::scripts::{compare_with_answer_file, docker_run};
-pub fn code_handler(
-    mut multipart: Multipart,
-) -> Result<Json<String>, StatusCode> {
-
+pub fn code_handler(mut multipart: Multipart) -> Result<Json<String>, StatusCode> {
     todo!();
     // while let Some(field) = multipart.next_field().await.unwrap() {
     //     let filename = field
