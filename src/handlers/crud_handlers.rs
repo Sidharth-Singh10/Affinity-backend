@@ -113,21 +113,47 @@ pub async fn get_user_by_id_handler(
     Extension(db): Extension<DatabaseConnection>,
     Json(get_user_info): Json<GirlBoyInfoById>,
 ) -> impl IntoResponse {
-    let id: i32 = get_user_info.id.parse().unwrap();
+    // Attempt to parse the ID and handle potential errors
+    let id = match get_user_info.id.parse::<i32>() {
+        Ok(id) => id,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json("Invalid ID format: Expected a valid integer"),
+            )
+                .into_response();
+        }
+    };
+
+    // Handle potential database connection issues
     let user = user::Entity::find()
         .filter(user::Column::Id.eq(id))
         .one(&db)
         .await;
 
     match user {
-        Ok(user) => {
-            // Return the list of boys in JSON format
+        Ok(Some(user)) => {
+            // Return user details in JSON format
             Json(user).into_response()
         }
+        // `None` is part of the Rust `Option` enum and is not a variable.
+        // It's a keyword used to represent the absence of a value, so the snake_case lint warning can be safely ignored here.
+        Ok(None) => {
+            // Handle the case where no user is found
+            (
+                StatusCode::NOT_FOUND,
+                Json(format!("No user found with ID: {}", id)),
+            )
+                .into_response()
+        }
         Err(e) => {
-            // Log the error and return a 500 status code
-            eprintln!("Failed to get user from the database: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+            // Handle database query errors
+            eprintln!("Failed to retrieve user from the database: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json("Database query failed"),
+            )
+                .into_response()
         }
     }
 }
@@ -443,29 +469,62 @@ pub async fn update_contest_score_handler(
     Extension(db): Extension<DatabaseConnection>,
     Json(contest_info): Json<ContestInfo>,
 ) -> impl IntoResponse {
-    let id: i32 = contest_info.id.parse().unwrap();
+    // Attempt to parse the ID and handle potential errors
+    let id = match contest_info.id.parse::<i32>() {
+        Ok(id) => id,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json("Invalid ID format: Expected a valid integer"),
+            )
+                .into_response();
+        }
+    };
 
-    let user = friend_list::Entity::find()
+    // Attempt to find the user in the friend list by ID
+    match friend_list::Entity::find()
         .filter(friend_list::Column::Id.eq(id))
         .one(&db)
-        .await;
-
-    match user {
-        Ok(user) => {
-            let mut user: friend_list::ActiveModel = user.unwrap().into();
-
+        .await
+    {
+        Ok(Some(user)) => {
+            let mut user: friend_list::ActiveModel = user.into();
             user.contest_score = Set(contest_info.contestscore);
-            let user = user.update(&db).await;
 
-            match user {
-                Ok(_) => StatusCode::OK.into_response(),
-                Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            // Attempt to update the user's contest score
+            match user.update(&db).await {
+                Ok(_) => (
+                    StatusCode::OK,
+                    Json(format!(
+                        "Contest score updated successfully for user with ID: {}",
+                        id
+                    )),
+                )
+                    .into_response(),
+                Err(e) => {
+                    eprintln!("Failed to update contest score: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json("Failed to update contest score"),
+                    )
+                        .into_response()
+                }
             }
         }
-
+        // `None` is part of the Rust `Option` enum and is not a variable.
+        // It's a keyword used to represent the absence of a value, so the snake_case lint warning can be safely ignored here.
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(format!("User with ID {} not found", id)),
+        )
+            .into_response(),
         Err(e) => {
-            eprintln!("Failed to get user from the database: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+            eprintln!("Database query error: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json("Database query failed"),
+            )
+                .into_response()
         }
     }
 }
