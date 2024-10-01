@@ -123,14 +123,14 @@ pub async fn signup_handler(
                 .unwrap();
 
             if let Some(_) = created_user {
-                return Ok(StatusCode::ACCEPTED);
+                 Ok(StatusCode::ACCEPTED)
             } else {
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                 Err(StatusCode::INTERNAL_SERVER_ERROR)
             }
         }
         Err(e) => {
             eprintln!("Failed to insert user into the database: {}", e);
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
 }
@@ -314,15 +314,15 @@ pub async fn new_password_handler(
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-            return Ok(Json("Password updated successfully".to_string()));
+             Ok(Json("Password updated successfully".to_string()))
         } else {
             // Token not found
             txn.rollback().await.unwrap();
-            return Err(StatusCode::BAD_REQUEST);
+             Err(StatusCode::BAD_REQUEST)
         }
     } else {
         // One or both are missing
-        return Err(StatusCode::BAD_REQUEST);
+         Err(StatusCode::BAD_REQUEST)
     }
 }
 
