@@ -4,6 +4,14 @@ on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
+  DATABASE_URL: "YOUR_POSTGRES_DB_URL"
+  SMTP_USERNAME: "example@gmail.com"
+  SMTP_PASSWORD: "example"
+  SMTP_HOST: "smtp.example.com"
+  OTP_SECRET: "lorememsum"
+  JWT_SECRET: "yoursecret"
+  PASS_RESET_LINK: "http://localhost:5173/reset-password"
+  ALLOWED_ORIGINS: "http://localhost:3000,http://yourdomain.com"
 
 jobs:
   # test:
