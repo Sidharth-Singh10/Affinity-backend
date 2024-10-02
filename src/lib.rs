@@ -13,7 +13,8 @@ use handlers::{
         get_all_users_handler, get_boys_handler, get_girl_request_handler, get_girls_handler,
         get_matched_handler, get_user_by_id_handler, get_user_handler, reject_handler,
         update_contest_score_handler, update_score_handler, update_user_character_handler,
-    }, tests_handlers::health_check,
+    },
+    tests_handlers::health_check,
 };
 use sea_orm::Database;
 use tower_http::cors::{AllowOrigin, CorsLayer};
@@ -23,8 +24,7 @@ mod handlers;
 mod model;
 mod utils;
 
-
-pub async fn run() ->Router<()> {
+pub async fn run() -> Router<()> {
     let db_string = (*utils::constants::DATABASE_URL).clone();
 
     // Use ALLOWED_ORIGINS from constants.rs
@@ -58,7 +58,7 @@ pub async fn run() ->Router<()> {
         .await
         .expect("could not connect");
     let app: Router<()> = Router::new()
-        .route("/health_check",get(health_check))
+        .route("/health_check", get(health_check))
         .route("/sendpassreset", get(send_pass_reset_handler))
         .route("/newpassword", get(new_password_handler))
         .route("/otp", get(otp_handler))
@@ -84,5 +84,4 @@ pub async fn run() ->Router<()> {
 
     println!("Listening");
     app
-
 }
