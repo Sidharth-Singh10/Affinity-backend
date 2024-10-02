@@ -4,7 +4,9 @@ use axum::{
     Extension, Router,
 };
 use handlers::{
-    auth_handlers::{login_handler, new_password_handler, otp_handler, send_pass_reset_handler, signup_handler},
+    auth_handlers::{
+        login_handler, new_password_handler, otp_handler, send_pass_reset_handler, signup_handler,
+    },
     cp_handler::code_handler,
     crud_handlers::{
         add_friend_handler, change_flag_handler, create_matched_handler, get_accepted_boys_handler,
@@ -24,7 +26,7 @@ mod utils;
 #[tokio::main]
 async fn main() {
     let db_string = (*utils::constants::DATABASE_URL).clone();
-    
+
     // Use ALLOWED_ORIGINS from constants.rs
     let allowed_origins = (*utils::constants::ALLOWED_ORIGINS).clone();
 
@@ -45,7 +47,10 @@ async fn main() {
         if let Ok(header_value) = http::header::HeaderValue::from_str(origin) {
             cors = cors.allow_origin(AllowOrigin::exact(header_value));
         } else {
-            println!("Warning: Failed to convert origin to HeaderValue: {}", origin);
+            println!(
+                "Warning: Failed to convert origin to HeaderValue: {}",
+                origin
+            );
         }
     }
 
