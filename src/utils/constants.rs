@@ -33,7 +33,6 @@ lazy_static! {
     };
 
     pub static ref ALLOWED_ORIGINS: Vec<String> = {
-        dotenv().ok();
         match env::var("ALLOWED_ORIGINS") {
             Ok(allowed_origins_env) => {
                 allowed_origins_env
@@ -49,9 +48,9 @@ lazy_static! {
                     .collect()
             }
             Err(_) => {
-                // If ALLOWED_ORIGINS is not set, it defaults to an empty list
-                println!("Warning: ALLOWED_ORIGINS variable not set. Defaulting to an empty list.");
-                Vec::new()
+                // If ALLOWED_ORIGINS is not set, exit the program with a warning
+                eprintln!("Error: ALLOWED_ORIGINS variable not set. Exiting the program.");
+                std::process::exit(1);
             }
         }
     };
