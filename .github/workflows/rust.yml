@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
-  DATABASE_URL: "YOUR_POSTGRES_DB_URL"
+  DATABASE_URL: "http://localhost:8080"
   SMTP_USERNAME: "example@gmail.com"
   SMTP_PASSWORD: "example"
   SMTP_HOST: "smtp.example.com"
