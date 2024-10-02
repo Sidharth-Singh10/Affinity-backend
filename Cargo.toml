@@ -3,6 +3,13 @@ name = "rusty_backend"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/main.rs"
+name = "rusty_backend"
+
 
 [workspace]
 members = [".","migration","entity"]
@@ -30,4 +37,5 @@ lettre = { version = "0.11.9", features = ["tokio1-native-tls"] }
 handlebars = "6.1.0"
 totp-rs = "5.6.0"
 rand = "0.8.5"
+reqwest = "0.12.8"
 
