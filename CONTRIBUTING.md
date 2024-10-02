@@ -65,16 +65,16 @@ Mockup: (Optional, add any design or mockup if relevant)
 ## Pull Request Process
 
 1. **Fork the repository** and create your branch from `main`:
-   ```
-   git checkout -b feature/new-feature
+   
+   `git checkout -b feature/new-feature`
   
 2. Commit your changes with clear and descriptive commit messages:
-   ```
-   git commit -m "Add feature: implement pagination"
+   
+   `git commit -m "Add feature: implement pagination"`
 3. Push your branch to your forked repository:
-  ```
-  git push origin feature/new-feature
-  ```
+   
+    `git push origin feature/new-feature`
+
 4. Open a pull request:
   - Ensure your pull request title and description are clear.
   - Reference any related issues or feature requests.
@@ -86,6 +86,7 @@ Mockup: (Optional, add any design or mockup if relevant)
 
   - Follow Rust’s official style guide.
   - Run `cargo fmt` to format your code.
+  - Run `cargo clippy` to maintain idiomatic code
 
 ### Commit Message Format
   We follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification for writing commit messages:
@@ -94,7 +95,9 @@ feat: add new feature to API
 fix: resolve issue with database connection
 docs: update README with usage instructions
 ```
-
+### Hacktoberfest & GSSOC
+  Issues with labels `hacktoberfest` or `gssoc-ext` can be picked my multiple contributers. 
+  PR which are opened at the earliest and are upto a standard will be merged.
 
 
 
