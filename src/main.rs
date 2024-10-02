@@ -26,24 +26,12 @@ mod utils;
 #[tokio::main]
 async fn main() {
     let db_string = (*utils::constants::DATABASE_URL).clone();
-    let cors = CorsLayer::new()
+
+    // Use ALLOWED_ORIGINS from constants.rs
+    let allowed_origins = (*utils::constants::ALLOWED_ORIGINS).clone();
+
+    let mut cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
-        .allow_origin(AllowOrigin::exact(
-            "http://ec2-13-232-176-18.ap-south-1.compute.amazonaws.com:5173"
-                .parse()
-                .unwrap(),
-        ))
-        .allow_origin(AllowOrigin::exact(
-            "http://ec2-13-232-176-18.ap-south-1.compute.amazonaws.com"
-                .parse()
-                .unwrap(),
-        ))
-        .allow_origin(AllowOrigin::exact(
-            "http://ec2-13-126-149-80.ap-south-1.compute.amazonaws.com:5173"
-                .parse()
-                .unwrap(),
-        ))
-        .allow_origin(AllowOrigin::exact("http://localhost:5173".parse().unwrap()))
         .allow_headers([
             http::header::ACCEPT,
             http::header::CONTENT_TYPE,
@@ -53,6 +41,19 @@ async fn main() {
         ])
         .allow_credentials(true);
 
+    // Configure CORS for each allowed origin
+    for origin in &allowed_origins {
+        println!("Allowing origin: {}", origin);
+        if let Ok(header_value) = http::header::HeaderValue::from_str(origin) {
+            cors = cors.allow_origin(AllowOrigin::exact(header_value));
+        } else {
+            println!(
+                "Warning: Failed to convert origin to HeaderValue: {}",
+                origin
+            );
+        }
+    }
+
     let db = Database::connect(db_string)
         .await
         .expect("could not connect");
@@ -61,9 +62,7 @@ async fn main() {
         .route("/newpassword", get(new_password_handler))
         .route("/otp", get(otp_handler))
         .route("/login", post(login_handler))
-        // .route("/decode", get(decode_jwt))
         .route("/signup", post(signup_handler))
-        // .route("/runcode", post(code_handler))
         .route("/getuser", post(get_user_handler))
         .route("/getboys", get(get_boys_handler))
         .route("/getgirls", get(get_girls_handler))
@@ -82,8 +81,8 @@ async fn main() {
         .layer(cors)
         .layer(Extension(db));
 
-    let listner = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
     println!("Listening");
 
-    axum::serve(listner, app).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
