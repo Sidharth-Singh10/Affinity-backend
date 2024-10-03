@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  rusty_backend:
+    build: .
+    container_name: rusty_backend
+    working_dir: /rust
+    environment:
+      - DOCKER_HOST=tcp://docker:2376
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_CERT_PATH=/certs/client
+    depends_on:
+      - postgres
+    volumes:
+      - ./certs/client:/certs/client:ro
+    ports:
+      - "8080:8080"  # Exposing the Rust backend application port
+    networks:
+      - backend_net
+    command: ["rusty_backend"]  # Command to start the application
+
+  postgres:
+    image: postgres:13-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: affinity_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend_net
+    ports:
+      - "5432:5432"  # Exposing the PostgreSQL database port
+
+volumes:
+  postgres_data:
+
+networks:
+  backend_net:
+    driver: bridge
+
