@@ -8,7 +8,7 @@ This repository contains the backend for the **Affinity** project, built using t
 - **Framework**: Axum
 - **Database**: PostgreSQL
 - **Containerization**: Docker
-- **CI/CD**: Jenkins, Docker Compose
+- **CI/CD**: Github Actions ,Jenkins, Docker Compose
 
 ## Setup
 
@@ -38,9 +38,9 @@ Make sure you have the following installed:
 
 ## Affinity Project
 
-1. **Architecture**
+1. **Architecture** (deprecated)
    
 ![image](https://github.com/user-attachments/assets/402a9b69-eccd-478b-9c0e-50810200c28d)
-3. **Links**
-- Frontend: `https://github.com/rishyym0927/Affinity_frontend` 
+2. **Links**
+- Frontend: `https://github.com/rishyym0927/Affinity_frontend`
 
