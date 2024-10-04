@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+data:
+  DATABASE_URL: {{ quote .Values.database.databaseUrl }}
+  ALLOWED_ORIGINS: {{ .Values.origins.originUrls | quote }}
+  PASS_RESET_LINK : {{ .Values.passResetLink | quote }}
+  SMTP_HOST:        {{ .Values.smtp.smtpHost | quote }}
+  SMTP_USERNAME:  {{ .Values.smtp.smtpUsername | quote }}

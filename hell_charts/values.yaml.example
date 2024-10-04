@@ -1,0 +1,25 @@
+database:
+  databaseUrl: "yourdb"
+
+origins:
+  originUrls:   "http://localhost:3000"
+
+passResetLink: "http://localhost:5173/reset-password"
+
+smtp:
+  smtpHost: "smtp.example.com"
+  smtpUsername: "example@example.com"
+  smtpPassword: "example"
+
+otpSecret: "example"
+jwtSecret: "example"
+
+deployment:
+  replicas: 1
+  containerPort: 3001
+
+
+image:
+  repository: "yourusername/yourimage"
+  tag: "latest"
+
