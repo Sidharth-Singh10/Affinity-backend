@@ -6,6 +6,7 @@ mod m20240822_171309_add_field_to_friendlist;
 mod m20240823_075457_create_matched;
 mod m20240929_173839_pass_reset_table;
 mod m20240930_194047_pass_reset_table2;
+mod m20241004_152931_pass_reset3;
 
 pub struct Migrator;
 
@@ -19,6 +20,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240823_075457_create_matched::Migration),
             Box::new(m20240929_173839_pass_reset_table::Migration),
             Box::new(m20240930_194047_pass_reset_table2::Migration),
+            Box::new(m20241004_152931_pass_reset3::Migration),
         ]
     }
 }

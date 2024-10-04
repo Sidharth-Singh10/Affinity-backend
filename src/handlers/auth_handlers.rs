@@ -212,13 +212,13 @@ pub async fn send_pass_reset_handler(
                 .map(char::from)
                 .collect();
 
-        let hashed_token = match hash_password(token.as_str()) {
-            Ok(hash) => hash,
-            Err(e) => {
-                eprintln!("Password could not be hashed -> {}", e);
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-        };
+        // let hashed_token = match hash_password(token.as_str()) {
+        //     Ok(hash) => hash,
+        //     Err(e) => {
+        //         eprintln!("Password could not be hashed -> {}", e);
+        //         return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        //     }
+        // };
 
         let token_expiry = Utc::now() + chrono::Duration::hours(1); // Adds 1 hour to the current time
         let token_expiry_timestamp = token_expiry.timestamp(); // Converts to i64 (seconds since Unix epoch)
@@ -231,7 +231,7 @@ pub async fn send_pass_reset_handler(
 
         let pass_reset_model = pass_reset::ActiveModel {
             user_id: Set(user.id),
-            token: Set(hashed_token),
+            token: Set(token),
             token_expiry: Set(token_expiry_timestamp),
             ..Default::default()
         };
@@ -256,13 +256,16 @@ pub async fn new_password_handler(
     if let (Some(reset_token), Some(hashed_password)) =
         (params.get("token"), params.get("password"))
     {
-        let hashed_reset_token = match hash_password(reset_token) {
-            Ok(hashed) => hashed,                                    // Successfully hashed
-            Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR), // Handle error
-        };
+        // let hashed_reset_token = match hash_password(reset_token) {
+        //     Ok(hashed) => hashed,                                    // Successfully hashed
+        //     Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR), // Handle error
+        // };
+
+
+        // println!("{}", hashed_reset_token);
 
         let user = pass_reset::Entity::find()
-            .filter(pass_reset::Column::Token.contains(&hashed_reset_token))
+            .filter(pass_reset::Column::Token.contains(reset_token))
             .one(&db)
             .await
             .unwrap();
@@ -282,7 +285,7 @@ pub async fn new_password_handler(
 
         let matched_token = tokens
             .into_iter()
-            .find(|row| row.token == *hashed_reset_token);
+            .find(|row| row.token == *reset_token);
 
         if let Some(matched_token) = matched_token {
             // Check token expiry
@@ -300,7 +303,7 @@ pub async fn new_password_handler(
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
             // Update the user's password
-            let mut user_model = user::Entity::find_by_id(user_id).one(&txn).await.unwrap();
+            let  user_model = user::Entity::find_by_id(user_id).one(&txn).await.unwrap();
 
             let mut user: user::ActiveModel = user_model.unwrap().into();
 
