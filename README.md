@@ -44,3 +44,7 @@ Make sure you have the following installed:
 2. **Links**
 - Frontend: `https://github.com/rishyym0927/Affinity_frontend`
 
+## Our Valuable Contributors ❤️✨
+
+[![Contributors](https://contrib.rocks/image?repo=Sidharth-Singh10/Affinity-backend)](https://github.com/Sidharth-Singh10/Affinity-backend/graphs/contributors)
+
