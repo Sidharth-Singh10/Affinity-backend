@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-backend
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+    spec:
+      containers:
+      - name: backend
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        ports:
+        - containerPort: {{ .Values.deployment.containerPort }}
+        envFrom:
+        - configMapRef:
+            name: {{ .Release.Name }}-configmap
+        - secretRef:
+            name: {{ .Release.Name }}-secret 
