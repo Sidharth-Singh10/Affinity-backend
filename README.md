@@ -30,9 +30,15 @@ Make sure you have the following installed:
    cargo run
    ```
 ### Running in Docker
-   ```
-   docker-compose up --build
-   ```
+   The `dockerfile` is incomplete, add `env` accordingly.
+   The `docker-compose` is incomplete.
+   database url does not feed into the backend `env`
+   
+### Running in K8
+   `helm install <app-name> ./hell_charts`
+   does the work without setting up a database.
+   Configure `values.json` before running the command.
+    
 ## Contributing
    Read [CONTRIBUTING.md](https://github.com/Sidharth-Singh10/Affinity-backend/blob/main/CONTRIBUTING.md)
 

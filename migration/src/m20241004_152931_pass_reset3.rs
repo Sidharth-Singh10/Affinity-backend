@@ -17,7 +17,13 @@ impl MigrationTrait for Migration {
                     .col(string(PassReset::Token).not_null())
                     .col(big_integer(PassReset::TokenExpiry).not_null())
                     // Define composite primary key
-                    .primary_key(Index::create().name("user_token").col(PassReset::UserId).col(PassReset::Token).primary())
+                    .primary_key(
+                        Index::create()
+                            .name("user_token")
+                            .col(PassReset::UserId)
+                            .col(PassReset::Token)
+                            .primary(),
+                    )
                     .to_owned(),
             )
             .await
