@@ -5,16 +5,12 @@ services:
     build: .
     container_name: rusty_backend
     working_dir: /rust
-    environment:
-      - DOCKER_HOST=tcp://docker:2376
-      - DOCKER_TLS_VERIFY=1
-      - DOCKER_CERT_PATH=/certs/client
     depends_on:
       - postgres
     volumes:
-      - ./certs/client:/certs/client:ro
+      - ./certs/client:/certs/client:ro  # Mounts for Docker certificates
     ports:
-      - "8080:8080"  # Exposing the Rust backend application port
+      - "3001:3001"  # Exposing the Rust backend application port on 3001
     networks:
       - backend_net
     command: ["rusty_backend"]  # Command to start the application
@@ -39,4 +35,3 @@ volumes:
 networks:
   backend_net:
     driver: bridge
-
