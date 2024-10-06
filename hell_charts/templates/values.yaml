@@ -2,3 +2,5 @@ postgresql:
   enabled: true
   username: admin
   password: password
+  storageSize: 1Gi  # Adjust as needed
+
