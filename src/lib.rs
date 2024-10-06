@@ -47,49 +47,14 @@ pub async fn run() -> Router<()> {
     let db = Database::connect(db_string)
         .await
         .expect("could not connect");
-
     let app: Router<()> = Router::new()
         .nest("/auth", auth_routes())
         .nest("/user", user_routes())
+        .nest("/matchmaking", matchmaking_routes())
+        .nest("/score", score_routes())
+        .nest("/diagnostics", diagnostics_routes())
         .layer(cors)
         .layer(Extension(db));
-
-    // let app: Router<()> = Router::new()
-    //     // Checks
-    //     .route("/health_check", get(health_check))
-
-    //     // auth
-    //     .route("/login", post(login_handler))
-    //     .route("/signup", post(signup_handler))
-    //     .route("/sendpassreset", get(send_pass_reset_handler))
-    //     .route("/newpassword", get(new_password_handler))
-    //     .route("/otp", get(otp_handler))
-    //
-    //     // user
-    //     .route("/getuser", post(get_user_handler))
-    //     .route("/getallusers", get(get_all_users_handler))
-    //     .route("/updatecharacter", put(update_user_character_handler))
-    //     .route("/getuserbyid", post(get_user_by_id_handler))
-    //
-    //     // friends
-    //     .route("/getboys", get(get_boys_handler))
-    //     .route("/getacceptedboys", post(get_accepted_boys_handler))
-    //     .route("/getgirls", get(get_girls_handler))
-    //     .route("/getgirlrequests", post(get_girl_request_handler))
-    //     .route("/addfriend", post(add_friend_handler))
-    //     .route("/changeflag", post(change_flag_handler))
-    //
-    //     // score
-    //     .route("/updatescore", put(update_score_handler))
-    //     .route("/updatecontestscore", put(update_contest_score_handler))
-    //
-    //     // match
-    //     .route("/creatematch", post(create_matched_handler))
-    //     .route("/getmatched", post(get_matched_handler))
-    //     .route("/reject", post(reject_handler))
-    //
-    //     .layer(cors)
-    //     .layer(Extension(db));
 
     println!("Listening");
     app
