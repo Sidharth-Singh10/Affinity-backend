@@ -1,26 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-backend
-  labels:
-    app: {{ .Chart.Name }}
+  name: {{ .Release.Name }}-postgresql
 spec:
-  replicas: {{ .Values.deployment.replicas }}
+  replicas: 1
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}
+      app: {{ .Release.Name }}-postgresql
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
+        app: {{ .Release.Name }}-postgresql
     spec:
       containers:
-      - name: backend
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        ports:
-        - containerPort: {{ .Values.deployment.containerPort }}
-        envFrom:
-        - configMapRef:
-            name: {{ .Release.Name }}-configmap
-        - secretRef:
-            name: {{ .Release.Name }}-secret 
+        - name: postgresql
+          image: postgres:latest
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-postgres-config
+                  key: database_name
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres-secret
+                  key: password
+          ports:
+            - containerPort: 5432
