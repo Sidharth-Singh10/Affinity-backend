@@ -365,8 +365,11 @@ pub async fn create_matched_handler(
         ..Default::default()
     };
 
-    if list.insert(&db).await.is_err() {
-        println!("{}", e);
+    let flag_update_result = list.insert(&db).await;
+    if flag_update_result.is_err() {
+        if let Err(e) = flag_update_result {
+            print!("{}", e);
+        }
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json("Failed to add friend"),

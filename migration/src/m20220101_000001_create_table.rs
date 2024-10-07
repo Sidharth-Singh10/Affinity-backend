@@ -57,7 +57,7 @@ impl MigrationTrait for Migration {
 enum User {
     Table,
     Id,
-    UserName,
+    Name,
     FirstName,
     LastName,
     Email,

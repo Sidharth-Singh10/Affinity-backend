@@ -3,8 +3,6 @@ use std::collections::HashMap;
 use axum::{
     extract::Query,
     http::{HeaderMap, StatusCode},
-    middleware::future::FromExtractorResponseFuture,
-    response::IntoResponse,
     Extension, Json,
 };
 use chrono::Utc;
@@ -261,7 +259,6 @@ pub async fn new_password_handler(
         //     Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR), // Handle error
         // };
 
-
         // println!("{}", hashed_reset_token);
 
         let user = pass_reset::Entity::find()
@@ -283,9 +280,7 @@ pub async fn new_password_handler(
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-        let matched_token = tokens
-            .into_iter()
-            .find(|row| row.token == *reset_token);
+        let matched_token = tokens.into_iter().find(|row| row.token == *reset_token);
 
         if let Some(matched_token) = matched_token {
             // Check token expiry
@@ -303,7 +298,7 @@ pub async fn new_password_handler(
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
             // Update the user's password
-            let  user_model = user::Entity::find_by_id(user_id).one(&txn).await.unwrap();
+            let user_model = user::Entity::find_by_id(user_id).one(&txn).await.unwrap();
 
             let mut user: user::ActiveModel = user_model.unwrap().into();
 
