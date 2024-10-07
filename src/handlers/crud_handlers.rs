@@ -365,7 +365,7 @@ pub async fn create_matched_handler(
         ..Default::default()
     };
 
-    if let Err(e) = list.insert(&db).await {
+    if list.insert(&db).await.is_err() {
         println!("{}", e);
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -383,7 +383,7 @@ pub async fn create_matched_handler(
         .await;
 
     // Handle the result of updating the flags
-    if let Err(_) = flag_update_result {
+    if flag_update_result.is_err() {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json("Failed to update flags to 0"),
@@ -404,7 +404,7 @@ pub async fn create_matched_handler(
             let mut user: friend_list::ActiveModel = user.into();
             user.flag = Set("2".to_string());
 
-            if let Err(_) = user.update(&db).await {
+            if (user.update(&db).await).is_err() {
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json("Failed to update flag to 2"),
@@ -454,7 +454,7 @@ pub async fn reject_handler(
         .exec(&db)
         .await;
 
-    if let Err(_) = flag_update_result {
+    if flag_update_result.is_err() {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json("Failed to update flags to 0"),

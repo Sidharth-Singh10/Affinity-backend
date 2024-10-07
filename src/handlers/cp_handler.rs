@@ -20,7 +20,7 @@ pub fn code_handler(mut multipart: Multipart) -> Result<Json<String>, StatusCode
     //     //defingn path
     //     let dir: PathBuf = "./uploads".into();
 
-    //     if let Err(err) = create_dir_all(&dir).await {
+    //     if create_dir_all(&dir).await.is_err() {
     //         return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string()));
     //     }
 
