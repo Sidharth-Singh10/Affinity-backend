@@ -7,7 +7,6 @@ use handlers::{
     auth_handlers::{
         login_handler, new_password_handler, otp_handler, send_pass_reset_handler, signup_handler,
     },
-    cp_handler::code_handler,
     crud_handlers::{
         add_friend_handler, change_flag_handler, create_matched_handler, get_accepted_boys_handler,
         get_all_users_handler, get_boys_handler, get_girl_request_handler, get_girls_handler,

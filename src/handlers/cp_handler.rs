@@ -1,66 +1,66 @@
-use axum::Json;
-use axum::{extract::Multipart, http::StatusCode, response::IntoResponse};
+// use axum::Json;
+// use axum::{extract::Multipart, http::StatusCode};
 
-use crate::utils::scripts::{compare_with_answer_file, docker_run};
-pub fn code_handler(_multipart: Multipart) -> Result<Json<String>, StatusCode> {
-    todo!();
-    // while let Some(field) = multipart.next_field().await.unwrap() {
-    //     let filename = field
-    //         .file_name()
-    //         .unwrap_or("default_filename.txt")
-    //         .to_string();
-    //     let name = field.name().unwrap().to_string();
-    //     let data = field.bytes().await.unwrap();
+// use crate::utils::scripts::{compare_with_answer_file, docker_run};
+// pub fn code_handler(_multipart: Multipart) -> Result<Json<String>, StatusCode> {
+//     todo!();
+// while let Some(field) = multipart.next_field().await.unwrap() {
+//     let filename = field
+//         .file_name()
+//         .unwrap_or("default_filename.txt")
+//         .to_string();
+//     let name = field.name().unwrap().to_string();
+//     let data = field.bytes().await.unwrap();
 
-    //     println!("Length of `{}` is {} bytes", name, data.len());
+//     println!("Length of `{}` is {} bytes", name, data.len());
 
-    //     //defingn path
-    //     let dir: PathBuf = "./uploads".into();
+//     //defingn path
+//     let dir: PathBuf = "./uploads".into();
 
-    //     if create_dir_all(&dir).await.is_err() {
-    //         return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string()));
-    //     }
+//     if create_dir_all(&dir).await.is_err() {
+//         return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string()));
+//     }
 
-    //     let filepath = dir.join(filename.clone());
+//     let filepath = dir.join(filename.clone());
 
-    //     let mut file = File::create(&filepath)
-    //         .await
-    //         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+//     let mut file = File::create(&filepath)
+//         .await
+//         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
 
-    //     file.write_all(&data)
-    //         .await
-    //         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+//     file.write_all(&data)
+//         .await
+//         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
 
-    //     let add = format!("./uploads/{}", filename.clone());
+//     let add = format!("./uploads/{}", filename.clone());
 
-    //     let args = [add.as_str()];
+//     let args = [add.as_str()];
 
-    //     match docker_run(&args, filename.clone()).await {
-    //         Ok(stdout) => match compare_with_answer_file(&stdout, &filename).await {
-    //             Ok(true) => {
-    //                 println!("The output matches the answer file.");
-    //                 return Ok("AC");
-    //             }
-    //             Ok(false) => {
-    //                 println!("The output does NOT match the answer file.");
-    //                 return Ok("WA");
-    //             }
-    //             Err(e) => {
-    //                 eprintln!("Error comparing with answer file: {}", e);
-    //                 return Ok("Error comparing with answer file");
-    //             }
-    //         },
-    //         Err(e) => {
-    //             eprintln!("Error running script: {}", e);
-    //             return Ok("Error running docker");
-    //         }
-    //     }
-    // }
+//     match docker_run(&args, filename.clone()).await {
+//         Ok(stdout) => match compare_with_answer_file(&stdout, &filename).await {
+//             Ok(true) => {
+//                 println!("The output matches the answer file.");
+//                 return Ok("AC");
+//             }
+//             Ok(false) => {
+//                 println!("The output does NOT match the answer file.");
+//                 return Ok("WA");
+//             }
+//             Err(e) => {
+//                 eprintln!("Error comparing with answer file: {}", e);
+//                 return Ok("Error comparing with answer file");
+//             }
+//         },
+//         Err(e) => {
+//             eprintln!("Error running script: {}", e);
+//             return Ok("Error running docker");
+//         }
+//     }
+// }
 
-    // Ok("File uploaded successfully")
-    // Define the path where you want to save the file
+// Ok("File uploaded successfully")
+// Define the path where you want to save the file
 
-    // Save the file
+// Save the file
 
-    // Ok("File uploaded successfully".to_string())
-}
+// Ok("File uploaded successfully".to_string())
+// }
