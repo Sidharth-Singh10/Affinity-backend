@@ -18,7 +18,7 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(User::Name).string().not_null())
+                    .col(ColumnDef::new(User::UserName).string().not_null())
                     .col(ColumnDef::new(User::FirstName).string())
                     .col(ColumnDef::new(User::LastName).string())
                     .col(ColumnDef::new(User::Email).string().unique_key().not_null())
@@ -57,7 +57,7 @@ impl MigrationTrait for Migration {
 enum User {
     Table,
     Id,
-    Name,
+    UserName,
     FirstName,
     LastName,
     Email,
