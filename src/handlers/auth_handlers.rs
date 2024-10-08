@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use axum::{
     extract::Query,
     http::{HeaderMap, StatusCode},
-    middleware::future::FromExtractorResponseFuture,
     response::IntoResponse,
     Extension, Json,
 };
@@ -122,7 +121,7 @@ pub async fn signup_handler(
                 .await
                 .unwrap();
 
-            if let Some(_) = created_user {
+            if created_user.is_some() {
                 Ok(StatusCode::ACCEPTED)
             } else {
                 Err(StatusCode::INTERNAL_SERVER_ERROR)
@@ -224,7 +223,7 @@ pub async fn send_pass_reset_handler(
         let token_expiry_timestamp = token_expiry.timestamp(); // Converts to i64 (seconds since Unix epoch)
 
         let username = user.user_name;
-        let reset_link = format!("{}?token={}", PASS_RESET_LINK.to_string(), token);
+        let reset_link = format!("{}?token={}", *PASS_RESET_LINK, token);
         let sent_email = PassReset::new(username.to_string(), reset_link, email.to_string());
 
         let _ = sent_email.send_pass_reset().await;
@@ -232,8 +231,7 @@ pub async fn send_pass_reset_handler(
         let pass_reset_model = pass_reset::ActiveModel {
             user_id: Set(user.id),
             token: Set(token),
-            token_expiry: Set(token_expiry_timestamp),
-            ..Default::default()
+            token_expiry: Set(token_expiry_timestamp)
         };
 
         match pass_reset_model.insert(&db).await {
