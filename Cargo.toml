@@ -38,4 +38,7 @@ handlebars = "6.1.0"
 totp-rs = "5.6.0"
 rand = "0.8.5"
 reqwest = "0.12.8"
+hmac = "0.12.1"
+sha2 = "0.10.6"
+base64 = "0.21.0"
 

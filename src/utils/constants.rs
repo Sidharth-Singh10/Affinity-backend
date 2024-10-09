@@ -28,6 +28,10 @@ lazy_static! {
         env::var("JWT_SECRET").expect("JWT_SECRET must be set")
     };
 
+    pub static ref HMAC_SECRET: String = {
+        env::var("HMAC_SECRET").expect("HMAC_SECRET must be set")
+    };
+
     pub static ref PASS_RESET_LINK: String = {
         env::var("PASS_RESET_LINK").expect("PASS_RESET_LINK must be set")
     };
