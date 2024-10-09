@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+// auth_handler.rs
+use std::{collections::HashMap, string};
 
 use axum::{
     extract::Query,
@@ -27,6 +28,13 @@ use crate::{
         verify_email::EmailOTP,
     },
 };
+
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
+use rand::Rng;
+use base64::{Engine as _, engine::general_purpose};
+
+const HMAC_SECRET: &[u8] = b"your-secret-key-here";
 
 pub async fn signup_handler(
     Extension(db): Extension<DatabaseConnection>,
@@ -188,6 +196,30 @@ pub async fn login_handler(
     })
 }
 
+fn generate_secure_token() -> (String, String) {
+    let token: String = rand::thread_rng()
+        .sample_iter(&rand::distributions::Alphanumeric)
+        .take(64)
+        .map(char::from)
+        .collect();
+
+    let hmac = create_hmac(&token);
+    (token, hmac)
+}
+
+fn create_hmac(token: &str) -> String {
+    let mut mac = Hmac::<Sha256>::new_from_slice(HMAC_SECRET).expect("HMAC can take key of any size");
+    mac.update(token.as_bytes());
+    let result = mac.finalize();
+    general_purpose::STANDARD_NO_PAD.encode(result.into_bytes())
+}
+
+fn verify_token(token: &str, stored_hmac: &str) -> bool {
+    let calculated_hmac = create_hmac(token);
+    calculated_hmac == stored_hmac
+}
+
+// Modified send_pass_reset_handler
 pub async fn send_pass_reset_handler(
     Extension(db): Extension<DatabaseConnection>,
     Query(params): Query<HashMap<String, String>>,
@@ -206,22 +238,10 @@ pub async fn send_pass_reset_handler(
         .await
         .unwrap()
     {
-        let token: String =
-            rand::Rng::sample_iter(rand::thread_rng(), &rand::distributions::Alphanumeric)
-                .take(64)
-                .map(char::from)
-                .collect();
+        let (token, hmac) = generate_secure_token();
 
-        // let hashed_token = match hash_password(token.as_str()) {
-        //     Ok(hash) => hash,
-        //     Err(e) => {
-        //         eprintln!("Password could not be hashed -> {}", e);
-        //         return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        //     }
-        // };
-
-        let token_expiry = Utc::now() + chrono::Duration::hours(1); // Adds 1 hour to the current time
-        let token_expiry_timestamp = token_expiry.timestamp(); // Converts to i64 (seconds since Unix epoch)
+        let token_expiry = Utc::now() + chrono::Duration::hours(1);
+        let token_expiry_timestamp = token_expiry.timestamp();
 
         let username = user.user_name;
         let reset_link = format!("{}?token={}", PASS_RESET_LINK.to_string(), token);
@@ -231,7 +251,7 @@ pub async fn send_pass_reset_handler(
 
         let pass_reset_model = pass_reset::ActiveModel {
             user_id: Set(user.id),
-            token: Set(token),
+            token: Set(hmac),  // Store the HMAC instead of the plain token
             token_expiry: Set(token_expiry_timestamp),
             ..Default::default()
         };
@@ -245,7 +265,6 @@ pub async fn send_pass_reset_handler(
         }
     }
 
-    // Temporarily return a success message
     Ok(Json(format!("Password reset link sent to {}", email)))
 }
 
@@ -253,58 +272,49 @@ pub async fn new_password_handler(
     Extension(db): Extension<DatabaseConnection>,
     Query(params): Query<HashMap<String, String>>,
 ) -> Result<Json<String>, StatusCode> {
-    if let (Some(reset_token), Some(hashed_password)) =
+    if let (Some(reset_token), Some(new_password)) =
         (params.get("token"), params.get("password"))
     {
-        // let hashed_reset_token = match hash_password(reset_token) {
-        //     Ok(hashed) => hashed,                                    // Successfully hashed
-        //     Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR), // Handle error
-        // };
+        let txn = db.begin().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-        // println!("{}", hashed_reset_token);
-
-        let user = pass_reset::Entity::find()
-            .filter(pass_reset::Column::Token.contains(reset_token))
-            .one(&db)
-            .await
-            .unwrap();
-
-        let user_id = match user {
-            Some(entity) => entity.user_id,
-            None => return Err(StatusCode::NOT_FOUND),
-        };
-
-        let txn = db.begin().await.unwrap();
-
-        let tokens = pass_reset::Entity::find()
-            .filter(pass_reset::Column::UserId.eq(user_id))
+        // Fetch all password reset entries
+        let all_resets = pass_reset::Entity::find()
             .all(&txn)
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-        let matched_token = tokens.into_iter().find(|row| row.token == *reset_token);
+        // Find the matching token
+        let matched_reset = all_resets.into_iter().find(|reset| verify_token(&reset_token, &reset.token));
 
-        if let Some(matched_token) = matched_token {
+        if let Some(reset) = matched_reset {
             // Check token expiry
             let current_time = Utc::now().timestamp();
-            if matched_token.token_expiry < current_time {
-                txn.rollback().await.unwrap();
+            if reset.token_expiry < current_time {
+                txn.rollback().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
                 return Err(StatusCode::BAD_REQUEST); // Token has expired
             }
 
             // Delete all tokens for the user
             pass_reset::Entity::delete_many()
-                .filter(pass_reset::Column::UserId.eq(user_id))
+                .filter(pass_reset::Column::UserId.eq(reset.user_id))
                 .exec(&txn)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
             // Update the user's password
-            let user_model = user::Entity::find_by_id(user_id).one(&txn).await.unwrap();
+            let user_model = user::Entity::find_by_id(reset.user_id)
+                .one(&txn)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+                .ok_or(StatusCode::NOT_FOUND)?;
 
-            let mut user: user::ActiveModel = user_model.unwrap().into();
+            let mut user: user::ActiveModel = user_model.into();
 
-            user.password = Set(hashed_password.to_owned());
+            // Hash the new password before storing
+            let hashed_password = hash_password(new_password)
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            user.password = Set(hashed_password);
             user.update(&txn)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -316,12 +326,12 @@ pub async fn new_password_handler(
 
             Ok(Json("Password updated successfully".to_string()))
         } else {
-            // Token not found
-            txn.rollback().await.unwrap();
+            // Token not found or invalid
+            txn.rollback().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             Err(StatusCode::BAD_REQUEST)
         }
     } else {
-        // One or both are missing
+        // One or both parameters are missing
         Err(StatusCode::BAD_REQUEST)
     }
 }
