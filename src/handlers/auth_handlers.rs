@@ -24,17 +24,11 @@ use crate::{
     model::{Claims, LoginInfo, SignUpInfo},
     utils::{
         constants::{JWT_SECRET, PASS_RESET_LINK},
+        hash_token::{generate_secure_token, verify_token},
         pass_reset::PassReset,
         verify_email::EmailOTP,
     },
 };
-
-use hmac::{Hmac, Mac};
-use sha2::Sha256;
-use rand::Rng;
-use base64::{Engine as _, engine::general_purpose};
-
-const HMAC_SECRET: &[u8] = b"your-secret-key-here";
 
 pub async fn signup_handler(
     Extension(db): Extension<DatabaseConnection>,
@@ -196,29 +190,6 @@ pub async fn login_handler(
     })
 }
 
-fn generate_secure_token() -> (String, String) {
-    let token: String = rand::thread_rng()
-        .sample_iter(&rand::distributions::Alphanumeric)
-        .take(64)
-        .map(char::from)
-        .collect();
-
-    let hmac = create_hmac(&token);
-    (token, hmac)
-}
-
-fn create_hmac(token: &str) -> String {
-    let mut mac = Hmac::<Sha256>::new_from_slice(HMAC_SECRET).expect("HMAC can take key of any size");
-    mac.update(token.as_bytes());
-    let result = mac.finalize();
-    general_purpose::STANDARD_NO_PAD.encode(result.into_bytes())
-}
-
-fn verify_token(token: &str, stored_hmac: &str) -> bool {
-    let calculated_hmac = create_hmac(token);
-    calculated_hmac == stored_hmac
-}
-
 // Modified send_pass_reset_handler
 pub async fn send_pass_reset_handler(
     Extension(db): Extension<DatabaseConnection>,
@@ -251,7 +222,7 @@ pub async fn send_pass_reset_handler(
 
         let pass_reset_model = pass_reset::ActiveModel {
             user_id: Set(user.id),
-            token: Set(hmac),  // Store the HMAC instead of the plain token
+            token: Set(hmac), // Store the HMAC instead of the plain token
             token_expiry: Set(token_expiry_timestamp),
             ..Default::default()
         };
@@ -272,10 +243,11 @@ pub async fn new_password_handler(
     Extension(db): Extension<DatabaseConnection>,
     Query(params): Query<HashMap<String, String>>,
 ) -> Result<Json<String>, StatusCode> {
-    if let (Some(reset_token), Some(new_password)) =
-        (params.get("token"), params.get("password"))
-    {
-        let txn = db.begin().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if let (Some(reset_token), Some(new_password)) = (params.get("token"), params.get("password")) {
+        let txn = db
+            .begin()
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
         // Fetch all password reset entries
         let all_resets = pass_reset::Entity::find()
@@ -284,13 +256,17 @@ pub async fn new_password_handler(
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
         // Find the matching token
-        let matched_reset = all_resets.into_iter().find(|reset| verify_token(&reset_token, &reset.token));
+        let matched_reset = all_resets
+            .into_iter()
+            .find(|reset| verify_token(&reset_token, &reset.token));
 
         if let Some(reset) = matched_reset {
             // Check token expiry
             let current_time = Utc::now().timestamp();
             if reset.token_expiry < current_time {
-                txn.rollback().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                txn.rollback()
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
                 return Err(StatusCode::BAD_REQUEST); // Token has expired
             }
 
@@ -311,8 +287,8 @@ pub async fn new_password_handler(
             let mut user: user::ActiveModel = user_model.into();
 
             // Hash the new password before storing
-            let hashed_password = hash_password(new_password)
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let hashed_password =
+                hash_password(new_password).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
             user.password = Set(hashed_password);
             user.update(&txn)
@@ -327,7 +303,9 @@ pub async fn new_password_handler(
             Ok(Json("Password updated successfully".to_string()))
         } else {
             // Token not found or invalid
-            txn.rollback().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            txn.rollback()
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             Err(StatusCode::BAD_REQUEST)
         }
     } else {

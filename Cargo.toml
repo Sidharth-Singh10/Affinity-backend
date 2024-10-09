@@ -25,7 +25,6 @@ serde = "1.0.197"
 serde_json = "1.0.114"
 chrono = "0.4.38"
 sea-orm = { version = "1.0.0-rc.5", features = [ "sqlx-postgres", "runtime-tokio-rustls", "macros" ] }
-sqlx = { version = "0.5", features = [ "postgres", "runtime-tokio-rustls" ] }
 uuid = { version = "1.10.0", features = ["v4"] }
 bcrypt = "0.15.1"
 tower-http = { version = "0.6.1", features = ["cors"] }
