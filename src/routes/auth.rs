@@ -3,9 +3,9 @@ use axum::{
     Router,
 };
 
-use crate::handlers::auth_handlers::{
+use crate::handlers::{auth_handlers::{
     login_handler, new_password_handler, otp_handler, send_pass_reset_handler, signup_handler,
-};
+}, cp_handler::code_handler};
 
 pub fn auth_routes() -> Router {
     Router::new()
@@ -14,4 +14,5 @@ pub fn auth_routes() -> Router {
         .route("/sendpassreset", get(send_pass_reset_handler))
         .route("/newpassword", get(new_password_handler))
         .route("/otp", get(otp_handler))
+        .route("/coderunner",post(code_handler))
 }

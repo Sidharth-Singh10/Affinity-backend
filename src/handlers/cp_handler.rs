@@ -1,69 +1,68 @@
-use axum::Json;
-use axum::{extract::Multipart, http::StatusCode, response::IntoResponse};
-use std::path::PathBuf;
-use tokio::fs::{create_dir_all, File};
-use tokio::io::AsyncWriteExt;
+use std::{path::Path, process::Stdio};
 
-use crate::utils::scripts::{compare_with_answer_file, docker_run};
-pub fn code_handler(mut multipart: Multipart) -> Result<Json<String>, StatusCode> {
-    todo!();
-    // while let Some(field) = multipart.next_field().await.unwrap() {
-    //     let filename = field
-    //         .file_name()
-    //         .unwrap_or("default_filename.txt")
-    //         .to_string();
-    //     let name = field.name().unwrap().to_string();
-    //     let data = field.bytes().await.unwrap();
+use axum::extract::Multipart;
+use tokio::{io::AsyncWriteExt, process::Command};
 
-    //     println!("Length of `{}` is {} bytes", name, data.len());
+use crate::{handlers::aws_handlers::get_testcase, utils::code_extensions::{get_language_from_extension, json_value}};
 
-    //     //defingn path
-    //     let dir: PathBuf = "./uploads".into();
+pub async fn code_handler(mut multipart: Multipart) {
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        let name = field.file_name().unwrap().to_string();
+        let data = field.text().await.unwrap();
 
-    //     if let Err(err) = create_dir_all(&dir).await {
-    //         return Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string()));
-    //     }
+        let extension = Path::new(&name).extension().and_then(|ext| ext.to_str());
+        let filename_without_ext = Path::new(&name).file_stem().unwrap()  // Get the Option<OsStr>
+        .to_string_lossy() 
+        .to_string(); 
+    
+        let language = get_language_from_extension(extension);
 
-    //     let filepath = dir.join(filename.clone());
+        let filename = format!("main.{}", extension.unwrap());
+        let runner_image = format!("glot/{}:latest", language);
 
-    //     let mut file = File::create(&filepath)
-    //         .await
-    //         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+        let testcase = get_testcase(filename_without_ext).await.unwrap_or_else(||{"".to_string()});
 
-    //     file.write_all(&data)
-    //         .await
-    //         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+        // Create a JSON object using the escaped code in "content"
+        let json_value = json_value(language, filename, data, testcase);
 
-    //     let add = format!("./uploads/{}", filename.clone());
+        // Create a `Command` to run `docker`
+        let mut docker_process = Command::new("docker")
+            .arg("run")
+            .arg("--rm")
+            .arg("-i")
+            .arg("--read-only")
+            .arg("--tmpfs")
+            .arg("/tmp:rw,noexec,nosuid,size=65536k")
+            .arg("--tmpfs")
+            .arg("/home/glot:rw,exec,nosuid,uid=1000,gid=1000,size=131072k")
+            .arg("-u")
+            .arg("glot")
+            .arg("-w")
+            .arg("/home/glot")
+            .arg(runner_image)
+            .stdin(Stdio::piped()) // Pipe stdin for passing the JSON input
+            .stdout(Stdio::piped()) // Capture stdout
+            .stderr(Stdio::piped()) // Capture stderr
+            .spawn()
+            .expect("Failed to start Docker process");
 
-    //     let args = [add.as_str()];
 
-    //     match docker_run(&args, filename.clone()).await {
-    //         Ok(stdout) => match compare_with_answer_file(&stdout, &filename).await {
-    //             Ok(true) => {
-    //                 println!("The output matches the answer file.");
-    //                 return Ok("AC");
-    //             }
-    //             Ok(false) => {
-    //                 println!("The output does NOT match the answer file.");
-    //                 return Ok("WA");
-    //             }
-    //             Err(e) => {
-    //                 eprintln!("Error comparing with answer file: {}", e);
-    //                 return Ok("Error comparing with answer file");
-    //             }
-    //         },
-    //         Err(e) => {
-    //             eprintln!("Error running script: {}", e);
-    //             return Ok("Error running docker");
-    //         }
-    //     }
-    // }
+        // Write the JSON input to the Docker container's stdin
+        if let Some(stdin) = docker_process.stdin.as_mut() {
+            stdin
+                .write_all(json_value.to_string().as_bytes())
+                .await
+                .expect("Failed to write to stdin");
+        }
 
-    // Ok("File uploaded successfully")
-    // Define the path where you want to save the file
+        // Capture the output from stdout and stderr
+        let output = docker_process
+            .wait_with_output()
+            .await
+            .expect("Failed to read output");
 
-    // Save the file
-
-    // Ok("File uploaded successfully".to_string())
+        // Print stdout and stderr
+        println!("STDOUT: {}", String::from_utf8_lossy(&output.stdout));
+        eprintln!("STDERR: {}", String::from_utf8_lossy(&output.stderr));
+    }
 }
