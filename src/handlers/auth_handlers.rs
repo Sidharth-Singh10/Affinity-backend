@@ -1,10 +1,9 @@
 // auth_handler.rs
-use std::{collections::HashMap, string};
+use std::collections::HashMap;
 
 use axum::{
     extract::Query,
     http::{HeaderMap, StatusCode},
-    middleware::future::FromExtractorResponseFuture,
     response::IntoResponse,
     Extension, Json,
 };
@@ -124,7 +123,7 @@ pub async fn signup_handler(
                 .await
                 .unwrap();
 
-            if let Some(_) = created_user {
+            if  created_user.is_some() {
                 Ok(StatusCode::ACCEPTED)
             } else {
                 Err(StatusCode::INTERNAL_SERVER_ERROR)
@@ -215,7 +214,7 @@ pub async fn send_pass_reset_handler(
         let token_expiry_timestamp = token_expiry.timestamp();
 
         let username = user.user_name;
-        let reset_link = format!("{}?token={}", PASS_RESET_LINK.to_string(), token);
+        let reset_link = format!("{}?token={}", *PASS_RESET_LINK, token);
         let sent_email = PassReset::new(username.to_string(), reset_link, email.to_string());
 
         let _ = sent_email.send_pass_reset().await;
@@ -224,7 +223,6 @@ pub async fn send_pass_reset_handler(
             user_id: Set(user.id),
             token: Set(hmac), // Store the HMAC instead of the plain token
             token_expiry: Set(token_expiry_timestamp),
-            ..Default::default()
         };
 
         match pass_reset_model.insert(&db).await {
@@ -258,7 +256,7 @@ pub async fn new_password_handler(
         // Find the matching token
         let matched_reset = all_resets
             .into_iter()
-            .find(|reset| verify_token(&reset_token, &reset.token));
+            .find(|reset| verify_token(reset_token, &reset.token));
 
         if let Some(reset) = matched_reset {
             // Check token expiry
