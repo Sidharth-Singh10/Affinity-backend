@@ -4,10 +4,6 @@ WORKDIR /app
 
 # Install necessary dependencies for building
 RUN apt-get update && apt-get install -y \
-    lld \
-    clang \
-    docker.io \
-    jq \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy source code and set necessary environment variables
@@ -19,6 +15,13 @@ RUN cargo build --release
 # Runtime stage
 FROM rust AS runtime
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    lld \
+    clang \
+    docker.io \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set Docker environment variables if you're using Docker in Docker
 ENV DOCKER_HOST=tcp://docker:2376

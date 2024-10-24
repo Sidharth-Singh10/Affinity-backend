@@ -4,24 +4,38 @@ services:
   rusty_backend:
     build: .
     container_name: rusty_backend
-    working_dir: /rust
+    working_dir: /app  # Consistent with the Dockerfile working directory
     depends_on:
       - postgres
+      - docker
     volumes:
-      - ./certs/client:/certs/client:ro  # Mounts for Docker certificates
+      - rusty_backend-docker-certs:/certs/client:ro
+      - rusty_backend-data:/var/rusty_backend_home
+      # - ./certs/client:/certs/client:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "3001:3001"  # Exposing the Rust backend application port on 3001
     networks:
       - backend_net
-    command: ["rusty_backend"]  # Command to start the application
+    command: ["./rusty_backend"]  # Command to start the application
+    environment:
+      - DATABASE_URL=postgresql://db_user:db_pass@postgres:5432/rusty_db
+      - SMTP_USERNAME=example@gmail.com
+      - SMTP_PASSWORD=passowrd
+      - SMTP_HOST=smtp.example.com
+      - OTP_SECRET=secret
+      - JWT_SECRET=secret
+      - PASS_RESET_LINK=http://localhost:5173/reset-password
+      - ALLOWED_ORIGINS=http://localhost:3000,http://yourdomain.com
+      # ADD AWS CREDS to run code runner
 
   postgres:
-    image: postgres:13-alpine
+    image: postgres:latest
     container_name: postgres
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: affinity_db
+      - POSTGRES_USER=db_user
+      - POSTGRES_PASSWORD=db_pass
+      - POSTGRES_DB=rusty_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -29,9 +43,40 @@ services:
     ports:
       - "5432:5432"  # Exposing the PostgreSQL database port
 
-volumes:
-  postgres_data:
+  migration_runner:
+    image: rust:latest
+    container_name: migration_runner
+    command: "bash -c 'cargo install sea-orm-cli && sea-orm-cli migrate up'"
+    working_dir: /app
+    depends_on:
+      - postgres  # Ensure migrations only run after the database is available
+    networks:
+      - backend_net
+    volumes:
+      - ./:/app  # Mount project directory to /app in the container
+    environment:
+      - DATABASE_URL=postgresql://db_user:db_pass@postgres:5432/rusty_db  # Match your backend DB
+
+  docker:
+    image: docker:dind
+    container_name: DiD
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    volumes:
+      - rusty_backend-docker-certs:/certs/client
+      - rusty_backend-data:/var/rusty_backend_home
+    networks:
+      - backend_net
+    ports:
+      - "2376:2376" 
+
 
 networks:
   backend_net:
     driver: bridge
+
+volumes:
+  postgres_data:
+  rusty_backend-docker-certs:
+  rusty_backend-data:
