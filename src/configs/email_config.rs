@@ -1,6 +1,6 @@
 use lettre::{
-    transport::smtp::authentication::Credentials, AsyncSmtpTransport,
-    AsyncTransport, Message, Tokio1Executor,
+    transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncTransport, Message,
+    Tokio1Executor,
 };
 
 use crate::utils::constants::{SMTP_HOST, SMTP_PASSWORD, SMTP_USERNAME};

@@ -123,7 +123,7 @@ pub async fn signup_handler(
                 .await
                 .unwrap();
 
-            if  created_user.is_some() {
+            if created_user.is_some() {
                 Ok(StatusCode::ACCEPTED)
             } else {
                 Err(StatusCode::INTERNAL_SERVER_ERROR)
