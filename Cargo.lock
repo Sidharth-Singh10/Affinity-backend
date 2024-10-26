@@ -366,7 +366,7 @@ dependencies = [
  "time",
  "tokio",
  "tracing",
- "url",
+ "url 2.5.2",
  "zeroize",
 ]
 
@@ -402,7 +402,7 @@ dependencies = [
  "http 0.2.12",
  "http-body 0.4.6",
  "once_cell",
- "percent-encoding",
+ "percent-encoding 2.3.1",
  "pin-project-lite",
  "tracing",
  "uuid",
@@ -436,11 +436,11 @@ dependencies = [
  "http-body 0.4.6",
  "lru",
  "once_cell",
- "percent-encoding",
+ "percent-encoding 2.3.1",
  "regex-lite",
  "sha2",
  "tracing",
- "url",
+ "url 2.5.2",
 ]
 
 [[package]]
@@ -530,7 +530,7 @@ dependencies = [
  "http 1.1.0",
  "once_cell",
  "p256",
- "percent-encoding",
+ "percent-encoding 2.3.1",
  "ring",
  "sha2",
  "subtle",
@@ -566,7 +566,7 @@ dependencies = [
  "http-body 0.4.6",
  "md-5",
  "pin-project-lite",
- "sha1",
+ "sha1 0.10.6",
  "sha2",
  "tracing",
 ]
@@ -597,7 +597,7 @@ dependencies = [
  "http 0.2.12",
  "http-body 0.4.6",
  "once_cell",
- "percent-encoding",
+ "percent-encoding 2.3.1",
  "pin-project-lite",
  "pin-utils",
  "tracing",
@@ -735,7 +735,7 @@ dependencies = [
  "memchr",
  "mime",
  "multer",
- "percent-encoding",
+ "percent-encoding 2.3.1",
  "pin-project-lite",
  "rustversion",
  "serde",
@@ -1538,7 +1538,7 @@ version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e13624c2627564efccf4934284bdd98cbaa14e79b0b5a141218e507b3a823456"
 dependencies = [
- "percent-encoding",
+ "percent-encoding 2.3.1",
 ]
 
 [[package]]
@@ -2207,6 +2207,17 @@ dependencies = [
 
 [[package]]
 name = "idna"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38f09e0f0b1fb55fdee1f17470ad800da77af5186a1a76c026b679358b7e844e"
+dependencies = [
+ "matches",
+ "unicode-bidi",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "idna"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "634d9b1461af396cad843f47fdba5597a4f9e6ddd4bfb6ff5d85028c25cb12f6"
@@ -2363,12 +2374,12 @@ dependencies = [
  "mime",
  "native-tls",
  "nom",
- "percent-encoding",
+ "percent-encoding 2.3.1",
  "quoted_printable",
  "socket2 0.5.7",
  "tokio",
  "tokio-native-tls",
- "url",
+ "url 2.5.2",
 ]
 
 [[package]]
@@ -2448,6 +2459,12 @@ checksum = "8263075bb86c5a1b1427b5ae862e8889656f126e9f77c484496e8b47cf5c5558"
 dependencies = [
  "regex-automata 0.1.10",
 ]
+
+[[package]]
+name = "matches"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
 name = "matchit"
@@ -2784,6 +2801,12 @@ dependencies = [
 
 [[package]]
 name = "percent-encoding"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31010dd2e1ac33d5b46a5b413495239882813e0369f8ed8a5e266f173602f831"
+
+[[package]]
+name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
@@ -3082,6 +3105,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "redis"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02a92e223490cc63d9230c4cdf132a48ce154ab1e063558e3841e219c2ea3f91"
+dependencies = [
+ "sha1 0.2.0",
+ "url 1.7.2",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3183,7 +3216,7 @@ dependencies = [
  "mime",
  "native-tls",
  "once_cell",
- "percent-encoding",
+ "percent-encoding 2.3.1",
  "pin-project-lite",
  "rustls-pemfile 2.2.0",
  "serde",
@@ -3194,7 +3227,7 @@ dependencies = [
  "tokio",
  "tokio-native-tls",
  "tower-service",
- "url",
+ "url 2.5.2",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -3444,6 +3477,7 @@ dependencies = [
  "lettre",
  "migration",
  "rand",
+ "redis",
  "reqwest",
  "sea-orm",
  "serde",
@@ -3523,7 +3557,7 @@ dependencies = [
  "thiserror",
  "time",
  "tracing",
- "url",
+ "url 2.5.2",
  "uuid",
 ]
 
@@ -3541,7 +3575,7 @@ dependencies = [
  "sea-schema",
  "tracing",
  "tracing-subscriber",
- "url",
+ "url 2.5.2",
 ]
 
 [[package]]
@@ -3750,6 +3784,12 @@ dependencies = [
 
 [[package]]
 name = "sha1"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc30b1e1e8c40c121ca33b86c23308a090d19974ef001b4bf6e61fd1a0fb095c"
+
+[[package]]
+name = "sha1"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3bf829a2d51ab4a5ddf1352d8470c140cadc8301b2ae1789db023f01cedd6ba"
@@ -3947,7 +3987,7 @@ dependencies = [
  "memchr",
  "once_cell",
  "paste",
- "percent-encoding",
+ "percent-encoding 2.3.1",
  "rust_decimal",
  "rustls 0.21.12",
  "rustls-pemfile 1.0.4",
@@ -3961,7 +4001,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tracing",
- "url",
+ "url 2.5.2",
  "uuid",
  "webpki-roots",
 ]
@@ -4002,7 +4042,7 @@ dependencies = [
  "syn 1.0.109",
  "tempfile",
  "tokio",
- "url",
+ "url 2.5.2",
 ]
 
 [[package]]
@@ -4035,12 +4075,12 @@ dependencies = [
  "md-5",
  "memchr",
  "once_cell",
- "percent-encoding",
+ "percent-encoding 2.3.1",
  "rand",
  "rsa",
  "rust_decimal",
  "serde",
- "sha1",
+ "sha1 0.10.6",
  "sha2",
  "smallvec",
  "sqlx-core",
@@ -4112,12 +4152,12 @@ dependencies = [
  "futures-util",
  "libsqlite3-sys",
  "log",
- "percent-encoding",
+ "percent-encoding 2.3.1",
  "serde",
  "sqlx-core",
  "time",
  "tracing",
- "url",
+ "url 2.5.2",
  "urlencoding",
  "uuid",
 ]
@@ -4472,7 +4512,7 @@ dependencies = [
  "base32",
  "constant_time_eq",
  "hmac",
- "sha1",
+ "sha1 0.10.6",
  "sha2",
 ]
 
@@ -4630,13 +4670,24 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "url"
+version = "1.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd4e7c0d531266369519a4aa4f399d748bd37043b00bde1e4ff1f60a120b355a"
+dependencies = [
+ "idna 0.1.5",
+ "matches",
+ "percent-encoding 1.0.1",
+]
+
+[[package]]
+name = "url"
 version = "2.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22784dbdf76fdde8af1aeda5622b546b422b6fc585325248a2bf9f5e41e94d6c"
 dependencies = [
  "form_urlencoded",
  "idna 0.5.0",
- "percent-encoding",
+ "percent-encoding 2.3.1",
 ]
 
 [[package]]
