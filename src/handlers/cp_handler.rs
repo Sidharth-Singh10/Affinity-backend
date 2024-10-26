@@ -1,6 +1,6 @@
-use std::{path::Path, process::Stdio};
+use std::{path::Path, process::Stdio, sync::Arc};
 
-use axum::{extract::Multipart, response::IntoResponse, Json};
+use axum::{extract::Multipart, response::IntoResponse, Extension, Json};
 use reqwest::StatusCode;
 use serde_json::Value;
 use tokio::{io::AsyncWriteExt, process::Command};
@@ -8,11 +8,15 @@ use tokio::{io::AsyncWriteExt, process::Command};
 use crate::{
     handlers::aws_handlers::{get_answer_file, get_testcase},
     utils::code_extensions::{get_language_from_extension, json_value},
+    RedisClient,
 };
 
-pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
+pub async fn code_handler(
+    Extension(redis_client): Extension<Arc<RedisClient>>,
+    mut multipart: Multipart,
+) -> impl IntoResponse {
     while let Some(field) = multipart.next_field().await.unwrap() {
-        // Get the file name and content from the multipart field
+        // file name and content from the multipart field
         let name = field.file_name().unwrap().to_string();
         let data = field.text().await.unwrap();
 
@@ -25,7 +29,6 @@ pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
 
         let language = get_language_from_extension(extension);
 
-        // Check for a valid extension
         let extension = match extension {
             Some(ext) => ext,
             None => {
@@ -37,14 +40,14 @@ pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
         let filename = format!("main.{}", extension);
         let runner_image = format!("glot/{}:latest", language);
 
-        let testcase = get_testcase(&filename_without_ext)
+        let testcase = get_testcase(&filename_without_ext, &redis_client)
             .await
             .unwrap_or_else(|| "".to_string());
 
-        // Create a JSON object using the escaped code in "content"
+        //  JSON object using the escaped code in "content"
         let json_value = json_value(language, filename, data, testcase);
 
-        // Create a `Command` to run `docker`
+        //  `Command` to run `docker`
         let mut docker_process = Command::new("docker")
             .arg("run")
             .arg("--rm")
@@ -65,7 +68,7 @@ pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
             .spawn()
             .expect("Failed to start Docker process");
 
-        // Write the JSON input to the Docker container's stdin
+        //  JSON input to the Docker container's stdin
         if let Some(stdin) = docker_process.stdin.as_mut() {
             stdin
                 .write_all(json_value.to_string().as_bytes())
@@ -73,15 +76,14 @@ pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
                 .expect("Failed to write to stdin");
         }
 
-        // Capture the output from stdout and stderr
+        //  output from stdout and stderr
         let output = docker_process
             .wait_with_output()
             .await
             .expect("Failed to wait for Docker process");
-            
 
         let stdout_str = String::from_utf8_lossy(&output.stdout);
-        // Parse the JSON from the stdout string
+        //  JSON from the stdout string
         let json_value: Value = match serde_json::from_str(&stdout_str) {
             Ok(value) => value,
             Err(e) => {
@@ -109,7 +111,7 @@ pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
             .to_string();
 
         // Get answer file
-        let answer = get_answer_file(&filename_without_ext).await;
+        let answer = get_answer_file(&filename_without_ext, &redis_client).await;
 
         match answer {
             Some(expected_answer) => {
@@ -132,6 +134,6 @@ pub async fn code_handler(mut multipart: Multipart) -> impl IntoResponse {
         }
     }
 
-    // Return a default response if no fields were processed
+    // default response if no fields were processed
     Json("No fields processed").into_response()
 }
