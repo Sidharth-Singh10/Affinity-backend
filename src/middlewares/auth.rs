@@ -9,8 +9,8 @@ use reqwest::StatusCode;
 use crate::handlers::auth_handlers::decode_jwt;
 
 pub async fn authorization_middleware(
-    mut req: Request<Body>, 
-    next: Next
+    mut req: Request<Body>,
+    next: Next,
 ) -> Result<Response<Body>, (StatusCode, &'static str)> {
     let auth_header = req.headers_mut().get(http::header::AUTHORIZATION);
 
@@ -19,7 +19,12 @@ pub async fn authorization_middleware(
             Ok(header_str) => header_str,
             Err(_) => return Err((StatusCode::FORBIDDEN, "Empty header is not allowed")),
         },
-        None => return Err((StatusCode::FORBIDDEN, "Please add the JWT token to the header")),
+        None => {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "Please add the JWT token to the header",
+            ))
+        }
     };
 
     let mut header_parts = auth_header.split_whitespace();

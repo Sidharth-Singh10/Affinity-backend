@@ -176,7 +176,7 @@ pub async fn login_handler(
             }
         };
 
-        let token  = format!("Bearer {}",token);
+        let token = format!("Bearer {}", token);
 
         let mut cookie = Cookie::new("token", token);
         cookie.set_http_only(true);

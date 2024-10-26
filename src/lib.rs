@@ -5,7 +5,6 @@ use axum::{
     Extension, Router,
 };
 
-
 use middlewares::auth::authorization_middleware;
 use redis::{Client, Commands, Connection, RedisResult};
 use routes::*;
@@ -17,10 +16,10 @@ mod bcrypts;
 mod configs;
 mod errors;
 mod handlers;
+mod middlewares;
 mod model;
 mod routes;
 mod utils;
-mod middlewares;
 
 pub async fn run() -> Router<()> {
     let db_string = (*utils::constants::DATABASE_URL).clone();
