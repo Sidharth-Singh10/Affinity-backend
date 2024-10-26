@@ -5,6 +5,8 @@ use axum::{
     Extension, Router,
 };
 
+
+use middlewares::auth::authorization_middleware;
 use redis::{Client, Commands, Connection, RedisResult};
 use routes::*;
 use sea_orm::Database;
@@ -13,10 +15,12 @@ use tower_http::cors::{AllowOrigin, CorsLayer};
 
 mod bcrypts;
 mod configs;
+mod errors;
 mod handlers;
 mod model;
 mod routes;
 mod utils;
+mod middlewares;
 
 pub async fn run() -> Router<()> {
     let db_string = (*utils::constants::DATABASE_URL).clone();
@@ -55,10 +59,11 @@ pub async fn run() -> Router<()> {
     let redis_client = Arc::new(RedisClient::new());
 
     let app: Router<()> = Router::new()
-        .nest("/auth", auth_routes())
         .nest("/user", user_routes())
         .nest("/matchmaking", matchmaking_routes())
         .nest("/score", score_routes())
+        .layer(axum::middleware::from_fn(authorization_middleware))
+        .nest("/auth", auth_routes())
         .nest("/diagnostics", diagnostics_routes())
         .layer(cors)
         .layer(Extension(db))

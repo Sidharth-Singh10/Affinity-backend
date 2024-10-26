@@ -10,7 +10,7 @@ use axum::{
 use chrono::Utc;
 use cookie::Cookie;
 use entity::{pass_reset, user};
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
     TransactionTrait,
@@ -175,6 +175,8 @@ pub async fn login_handler(
                 return Err(StatusCode::INTERNAL_SERVER_ERROR);
             }
         };
+
+        let token  = format!("Bearer {}",token);
 
         let mut cookie = Cookie::new("token", token);
         cookie.set_http_only(true);
@@ -359,29 +361,12 @@ pub async fn otp_handler(
     }
 }
 
-pub fn _decode_jwt(header_map: HeaderMap) -> Result<Json<String>, StatusCode> {
-    if let Some(auth_header) = header_map.get("Authorization") {
-        if let Ok(auth_header_str) = auth_header.to_str() {
-            if auth_header_str.starts_with("Bearer ") {
-                let token = auth_header_str.trim_start_matches("Bearer ").to_string();
-
-                match decode::<Claims>(
-                    &token,
-                    &DecodingKey::from_secret(JWT_SECRET.as_ref()),
-                    &Validation::default(),
-                ) {
-                    Ok(token_data) => {
-                        let email = token_data.claims.sub;
-                        return Ok(Json(email));
-                    }
-                    Err(e) => {
-                        eprintln!("Error decoding token {} !!!", e);
-                        return Err(StatusCode::UNAUTHORIZED);
-                    }
-                }
-            }
-        }
-    }
-
-    Err(StatusCode::UNAUTHORIZED)
+pub fn decode_jwt(jwt_token: String) -> Result<TokenData<Claims>, StatusCode> {
+    let result: Result<TokenData<Claims>, StatusCode> = decode(
+        &jwt_token,
+        &DecodingKey::from_secret(JWT_SECRET.as_ref()),
+        &Validation::default(),
+    )
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR);
+    result
 }
