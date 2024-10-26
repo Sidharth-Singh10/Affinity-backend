@@ -6,10 +6,10 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy source code and set necessary environment variables
+# Copy source code 
 COPY . .
 
-# Build the Rust application in release mode
+# Rust application in release mode
 RUN cargo build --release
 
 # Runtime stage
