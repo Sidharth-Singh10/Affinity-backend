@@ -4,9 +4,7 @@
 # 🚀 Affinity Backend
 
 Welcome to the **Affinity** backend repository! This project is powered by the blazing-fast [Axum](https://github.com/tokio-rs/axum) framework, built using **Rust** to handle API requests and efficiently communicate with a **PostgreSQL** database. Our backend is optimized for high performance and scalability, designed to meet the demands of modern applications.
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/ba566e43-01cf-4340-902f-57c091756896" alt="Affinity Architecture" width="300"/>
-</div>
+
 
  <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
@@ -52,19 +50,8 @@ Make sure you have the following installed:
 
 To run the project in Docker, ensure that the environment variables for database connection are properly set. Follow these steps:
 
-1. **Build the Docker image:**
 
-   ```bash
-   docker build -t affinity-backend .
-   ```
-
-2. **Run the Docker container:**
-
-   ```bash
-   docker run -e DATABASE_URL=<your_database_url> -p 8000:8000 affinity-backend
-   ```
-
-3. **Using Docker Compose:**
+1. **Using Docker Compose:**
 
    Update the `docker-compose.yml` file with the correct environment variables, and then:
 
