@@ -1,7 +1,4 @@
-
-
-
-# 🚀 Affinity Backend
+![AffinityBanner](https://github.com/user-attachments/assets/e207e037-b436-4007-a0a6-8bc73e0a99dd)
 
 Welcome to the **Affinity** backend repository! This project is powered by the blazing-fast [Axum](https://github.com/tokio-rs/axum) framework, built using **Rust** to handle API requests and efficiently communicate with a **PostgreSQL** database. Our backend is optimized for high performance and scalability, designed to meet the demands of modern applications.
 
