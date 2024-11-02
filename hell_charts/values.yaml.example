@@ -1,5 +1,5 @@
 database:
-  databaseUrl: "yourdb"
+  databaseUrl: "yourdburl"
 
 origins:
   originUrls:   "http://localhost:3000"
@@ -7,8 +7,8 @@ origins:
 passResetLink: "http://localhost:5173/reset-password"
 
 smtp:
-  smtpHost: "smtp.example.com"
-  smtpUsername: "example@example.com"
+  smtpHost: "smtp.zyx.com"
+  smtpUsername: "example@gmail.com"
   smtpPassword: "example"
 
 otpSecret: "example"
@@ -20,6 +20,26 @@ deployment:
 
 
 image:
-  repository: "yourusername/yourimage"
-  tag: "latest"
+  rusty_backend: 
+    repository: "example/affinity_backend"
+    tag: "latest"
+    pullPolicy: "Always"
 
+  docker_dind: "docker:dind"
+  redis: "redis:latest"
+
+services:
+  rusty_backend:
+    port: 3001
+  redis:
+    port: 6379
+  docker_dind:
+    port: 2376
+
+
+secrets:
+  awsSecretName: "example-secret"
+  awsAccessKeyId: "example"
+  awsSecretAccessKey: "8YYwRWIC5u+example"
+  awsRegion: "ap-example-1"
+ 

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        image: {{ .Values.image.rusty_backend.repository }}:{{ .Values.image.rusty_backend.tag }}
         ports:
         - containerPort: {{ .Values.deployment.containerPort }}
         envFrom:
@@ -24,3 +24,21 @@ spec:
             name: {{ .Release.Name }}-configmap
         - secretRef:
             name: {{ .Release.Name }}-secret 
+        volumeMounts:
+            - name: certs-volume
+              mountPath: /certs/client
+              readOnly: true
+            - name: backend-data
+              mountPath: /var/rusty_backend_home
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+      volumes:
+        - name: certs-volume
+          persistentVolumeClaim:
+            claimName: rustybackenddockercerts
+        - name: backend-data
+          persistentVolumeClaim:
+            claimName: rustybackenddata
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock

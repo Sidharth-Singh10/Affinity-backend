@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-dind
+  labels:
+    app: {{ .Release.Name }}-dind
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-dind
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-dind
+    spec:
+      containers:
+        - name: dind
+          image: {{ .Values.image.docker_dind }}
+          securityContext:
+            privileged: true  # Required for Docker-in-Docker
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: "/certs"
+          ports:
+            - containerPort: {{ .Values.services.docker_dind.port }}
+          volumeMounts:
+            - name: certs-volume
+              mountPath: /certs/client
+            - name: backend-data
+              mountPath: /var/rusty_backend_home
+      volumes:
+        - name: certs-volume
+          persistentVolumeClaim:
+            claimName: rustybackenddockercerts
+        - name: backend-data
+          persistentVolumeClaim:
+            claimName: rustybackenddata
