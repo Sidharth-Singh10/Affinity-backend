@@ -89,13 +89,18 @@ impl RedisClient {
 
     /// set a value in Redis
     pub async fn set_value(&self, key: &str, value: &str) -> RedisResult<()> {
-        let con = self.connection.lock().await;
+        let mut con = self.connection.lock().await;
         con.set(key, value)
     }
 
     /// get a value from Redis
     pub async fn get_value(&self, key: &str) -> RedisResult<Option<String>> {
-        let con = self.connection.lock().await;
+        let mut con = self.connection.lock().await;
         con.get(key)
+    }
+}
+impl Default for RedisClient {
+    fn default() -> Self {
+        Self::new()
     }
 }
