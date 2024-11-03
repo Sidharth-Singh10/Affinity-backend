@@ -1,5 +1,12 @@
+use std::collections::HashMap;
+use std::time::Duration;
+
 use crate::model::{CharacterDetails, GetUserInfo, GirlBoyInfo, GirlBoyInfoById, UpadateScoreInfo};
 use crate::model::{ContestInfo, FriendListInfo, Matched};
+use aws_config::Region;
+use aws_sdk_s3::presigning::PresigningConfig;
+use aws_sdk_s3::Client;
+use axum::extract::Query;
 use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
 use entity::users;
 use entity::{friend_list, matched};
@@ -527,4 +534,110 @@ pub async fn update_contest_score_handler(
                 .into_response()
         }
     }
+}
+
+pub async fn get_user_avatar(
+    Extension(db): Extension<DatabaseConnection>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Result<Json<String>, StatusCode> {
+    let config = aws_config::from_env()
+        .region(Region::new("ap-south-1"))
+        .load()
+        .await;
+    let client = Client::new(&config);
+
+    let bucket_name = "affinitys3";
+
+    let username = match params.get("username") {
+        Some(username) => username,
+        None => {
+            eprintln!("Username parameter is missing.");
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
+
+    // Fetch avatar object key from the database
+    let avatar_entry = match entity::avatar::Entity::find()
+        .filter(entity::avatar::Column::UserName.eq(username.clone()))
+        .one(&db)
+        .await
+    {
+        Ok(Some(entry)) => entry,
+        Ok(None) => {
+            eprintln!("No avatar found for username: {}", username);
+            return Err(StatusCode::NOT_FOUND);
+        }
+        Err(e) => {
+            eprintln!("Database error: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
+    let avatar_object_key = format!("avatars/{}", avatar_entry.object_key);
+
+    // Generate the presigned URL
+    let presigned_request = match client
+        .get_object()
+        .bucket(bucket_name)
+        .key(avatar_object_key.clone())
+        .presigned(PresigningConfig::expires_in(Duration::from_secs(600)).unwrap())
+        .await
+    {
+        Ok(request) => request,
+        Err(e) => {
+            eprintln!("Failed to create presigned URL: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
+    println!("Object URI: {}", presigned_request.uri());
+
+    Ok(Json(presigned_request.uri().to_string()))
+}
+pub async fn update_user_avatar(
+    Query(params): Query<HashMap<String, String>>,
+) -> Result<Json<String>, StatusCode> {
+    let config = aws_config::from_env()
+        .region(Region::new("ap-south-1"))
+        .load()
+        .await;
+    let client = Client::new(&config);
+
+    let bucket_name = "affinitys3";
+
+    let username = match params.get("username") {
+        Some(username) => username,
+        None => {
+            eprintln!("Username parameter is missing.");
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
+    let filename = match params.get("filename") {
+        Some(username) => username,
+        None => {
+            eprintln!("filename parameter is missing.");
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
+
+    let avatar_object_key = format!("avatars/{}/{}", username, filename);
+
+    // Generate the presigned URL
+    let presigned_request = match client
+        .put_object()
+        .bucket(bucket_name)
+        .key(avatar_object_key.clone())
+        .presigned(PresigningConfig::expires_in(Duration::from_secs(6000)).unwrap())
+        .await
+    {
+        Ok(request) => request,
+        Err(e) => {
+            eprintln!("Failed to create presigned URL: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
+    println!("Object URI: {}", presigned_request.uri());
+
+    Ok(Json(presigned_request.uri().to_string()))
 }

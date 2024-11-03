@@ -9,7 +9,7 @@ use axum::{
 };
 use chrono::Utc;
 use cookie::Cookie;
-use entity::{pass_reset, users};
+use entity::{avatar, pass_reset, users};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
@@ -90,7 +90,7 @@ pub async fn signup_handler(
     let score = signup_info.score;
 
     let user_model = users::ActiveModel {
-        user_name: Set(username),
+        user_name: Set(username.clone()),
         email: Set(email),
         first_name: Set(Some(first_name)),
         last_name: Set(Some(last_name)),
@@ -111,26 +111,47 @@ pub async fn signup_handler(
         traits: Set(None),
         commitment: Set(None),
         resolution: Set(None),
-        image_url: Set(image_url),
+        image_url: Set(image_url.clone()),
         score: Set(score),
         ..Default::default()
     };
 
-    match user_model.insert(&db).await {
-        Ok(inserted_user) => {
-            let created_user = users::Entity::find_by_id(inserted_user.id)
-                .one(&db)
-                .await
-                .unwrap();
-
-            if created_user.is_some() {
-                Ok(StatusCode::ACCEPTED)
-            } else {
-                Err(StatusCode::INTERNAL_SERVER_ERROR)
+    let avatar_model = avatar::ActiveModel {
+        user_name: Set(username),
+        object_key: Set(image_url),
+        ..Default::default()
+    };
+    // Starting a transaction
+    let txn = match db.begin().await {
+        Ok(transaction) => transaction,
+        Err(e) => {
+            eprintln!("Failed to start transaction: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+    match user_model.insert(&txn).await {
+        Ok(_) => {
+            match avatar_model.insert(&txn).await {
+                Ok(_) => {
+                    // Commiting the transaction
+                    if let Err(e) = txn.commit().await {
+                        eprintln!("Failed to commit transaction: {}", e);
+                        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                    }
+                    Ok(StatusCode::CREATED)
+                }
+                Err(e) => {
+                    eprintln!("Failed to insert avatar into the database: {}", e);
+                    // Rollback on error
+                    let _ = txn.rollback().await;
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
             }
         }
         Err(e) => {
-            eprintln!("Failed to insert users into the database: {}", e);
+            eprintln!("Failed to insert user into the database: {}", e);
+            // Rollback on error
+            let _ = txn.rollback().await;
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -291,7 +312,8 @@ pub async fn new_password_handler(
                 hash_password(new_password).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
             users.password = Set(hashed_password);
-            users.update(&txn)
+            users
+                .update(&txn)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
