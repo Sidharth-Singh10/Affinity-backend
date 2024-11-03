@@ -1,7 +1,7 @@
 use crate::model::{CharacterDetails, GetUserInfo, GirlBoyInfo, GirlBoyInfoById, UpadateScoreInfo};
 use crate::model::{ContestInfo, FriendListInfo, Matched};
 use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
-use entity::user;
+use entity::users;
 use entity::{friend_list, matched};
 use migration::Expr;
 use sea_orm::{ActiveModelTrait, EntityTrait};
@@ -11,8 +11,8 @@ use sea_orm::{QueryFilter, QueryOrder};
 use sea_orm::ColumnTrait;
 
 pub async fn get_boys_handler(Extension(db): Extension<DatabaseConnection>) -> impl IntoResponse {
-    let boys = user::Entity::find()
-        .filter(user::Column::Gender.contains("Male"))
+    let boys = users::Entity::find()
+        .filter(users::Column::Gender.contains("Male"))
         .all(&db)
         .await;
 
@@ -30,8 +30,8 @@ pub async fn get_boys_handler(Extension(db): Extension<DatabaseConnection>) -> i
 }
 
 pub async fn get_girls_handler(Extension(db): Extension<DatabaseConnection>) -> impl IntoResponse {
-    let boys = user::Entity::find()
-        .filter(user::Column::Gender.contains("Female"))
+    let boys = users::Entity::find()
+        .filter(users::Column::Gender.contains("Female"))
         .all(&db)
         .await;
 
@@ -54,18 +54,18 @@ pub async fn update_score_handler(
 ) -> impl IntoResponse {
     let email = update_score_info.email.clone();
 
-    match user::Entity::find()
-        .filter(user::Column::Email.eq(email))
+    match users::Entity::find()
+        .filter(users::Column::Email.eq(email))
         .one(&db)
         .await
     {
-        Ok(Some(user)) => {
-            let mut active_user: user::ActiveModel = user.into();
+        Ok(Some(users)) => {
+            let mut active_user: users::ActiveModel = users.into();
             active_user.score = Set(update_score_info.score);
             match active_user.update(&db).await {
                 Ok(_) => (StatusCode::ACCEPTED, Json("Score updated successfully")).into_response(),
                 Err(e) => {
-                    eprintln!("Failed to update user score: {}", e);
+                    eprintln!("Failed to update users score: {}", e);
                     (
                         StatusCode::INTERNAL_SERVER_ERROR,
                         Json("Failed to update score"),
@@ -74,12 +74,12 @@ pub async fn update_score_handler(
                 }
             }
         }
-        Ok(_) => (StatusCode::NOT_FOUND, Json("User not found")).into_response(),
+        Ok(_) => (StatusCode::NOT_FOUND, Json("users not found")).into_response(),
         Err(e) => {
-            eprintln!("Failed to retrieve user: {}", e);
+            eprintln!("Failed to retrieve users: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json("Failed to retrieve user"),
+                Json("Failed to retrieve users"),
             )
                 .into_response()
         }
@@ -91,19 +91,19 @@ pub async fn get_user_handler(
     Json(get_user_info): Json<GetUserInfo>,
 ) -> impl IntoResponse {
     let email = get_user_info.email;
-    let user = user::Entity::find()
-        .filter(user::Column::Email.contains(email))
+    let users = users::Entity::find()
+        .filter(users::Column::Email.contains(email))
         .one(&db)
         .await;
 
-    match user {
-        Ok(user) => {
+    match users {
+        Ok(users) => {
             // Return the list of boys in JSON format
-            Json(user).into_response()
+            Json(users).into_response()
         }
         Err(e) => {
             // Log the error and return a 500 status code
-            eprintln!("Failed to get user from the database: {}", e);
+            eprintln!("Failed to get users from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
@@ -126,29 +126,29 @@ pub async fn get_user_by_id_handler(
     };
 
     // Handle potential database connection issues
-    let user = user::Entity::find()
-        .filter(user::Column::Id.eq(id))
+    let users = users::Entity::find()
+        .filter(users::Column::Id.eq(id))
         .one(&db)
         .await;
 
-    match user {
-        Ok(Some(user)) => {
-            // Return user details in JSON format
-            Json(user).into_response()
+    match users {
+        Ok(Some(users)) => {
+            // Return users details in JSON format
+            Json(users).into_response()
         }
         // `None` is part of the Rust `Option` enum and is not a variable.
         // It's a keyword used to represent the absence of a value, so the snake_case lint warning can be safely ignored here.
         Ok(None) => {
-            // Handle the case where no user is found
+            // Handle the case where no users is found
             (
                 StatusCode::NOT_FOUND,
-                Json(format!("No user found with ID: {}", id)),
+                Json(format!("No users found with ID: {}", id)),
             )
                 .into_response()
         }
         Err(e) => {
             // Handle database query errors
-            eprintln!("Failed to retrieve user from the database: {}", e);
+            eprintln!("Failed to retrieve users from the database: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json("Database query failed"),
@@ -161,7 +161,7 @@ pub async fn get_user_by_id_handler(
 pub async fn get_all_users_handler(
     Extension(db): Extension<DatabaseConnection>,
 ) -> impl IntoResponse {
-    let users = user::Entity::find().all(&db).await;
+    let users = users::Entity::find().all(&db).await;
 
     match users {
         Ok(users) => Json(users).into_response(),
@@ -178,32 +178,32 @@ pub async fn update_user_character_handler(
 ) -> impl IntoResponse {
     let email = character_details.email;
 
-    let user = user::Entity::find()
-        .filter(user::Column::Email.contains(email))
+    let users = users::Entity::find()
+        .filter(users::Column::Email.contains(email))
         .one(&db)
         .await;
 
-    match user {
-        Ok(user) => {
-            let mut user: user::ActiveModel = user.unwrap().into();
-            // user.score = Set(character_details.score.to_owned());
-            user.values = Set(character_details.values);
-            user.style = Set(character_details.style);
-            user.traits = Set(character_details.traits);
-            user.commitment = Set(character_details.commitment);
-            user.resolution = Set(character_details.resolution);
-            user.interests = Set(character_details.interests);
+    match users {
+        Ok(users) => {
+            let mut users: users::ActiveModel = users.unwrap().into();
+            // users.score = Set(character_details.score.to_owned());
+            users.values = Set(character_details.values);
+            users.style = Set(character_details.style);
+            users.traits = Set(character_details.traits);
+            users.commitment = Set(character_details.commitment);
+            users.resolution = Set(character_details.resolution);
+            users.interests = Set(character_details.interests);
 
-            let user = user.update(&db).await;
+            let users = users.update(&db).await;
 
-            match user {
+            match users {
                 Ok(_) => StatusCode::ACCEPTED.into_response(),
                 Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
             }
         }
         Err(e) => {
             // Log the error and return a 500 status code
-            eprintln!("Failed to get user from the database: {}", e);
+            eprintln!("Failed to get users from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
@@ -215,7 +215,7 @@ pub async fn get_matched_handler(
 ) -> impl IntoResponse {
     let email = info.email;
 
-    let user = matched::Entity::find()
+    let users = matched::Entity::find()
         .filter(
             matched::Column::BoyEmailId
                 .contains(&email)
@@ -224,11 +224,11 @@ pub async fn get_matched_handler(
         .all(&db)
         .await;
 
-    match user {
-        Ok(user) => Json(user).into_response(),
+    match users {
+        Ok(users) => Json(users).into_response(),
         Err(e) => {
             // Log the error and return a 500 status code
-            eprintln!("Failed to get user from the database: {}", e);
+            eprintln!("Failed to get users from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
@@ -252,7 +252,7 @@ pub async fn add_friend_handler(
     match friend_list_model.insert(&db).await {
         Ok(_) => (StatusCode::ACCEPTED, Json("Friend added successfully")).into_response(),
         Err(e) => {
-            eprintln!("Failed to insert user into the database: {}", e);
+            eprintln!("Failed to insert users into the database: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, Json("Failed add friend")).into_response()
         }
     }
@@ -278,7 +278,7 @@ pub async fn get_girl_request_handler(
 
         Err(e) => {
             // Log the error and return a 500 status code
-            eprintln!("Failed to get user from the database: {}", e);
+            eprintln!("Failed to get users from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
@@ -305,7 +305,7 @@ pub async fn get_accepted_boys_handler(
 
         Err(e) => {
             // Log the error and return a 500 status code
-            eprintln!("Failed to get user from the database: {}", e);
+            eprintln!("Failed to get users from the database: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
@@ -317,21 +317,21 @@ pub async fn change_flag_handler(
 ) -> impl IntoResponse {
     let email: i32 = boy_info.email.parse().unwrap();
 
-    let user = friend_list::Entity::find()
+    let users = friend_list::Entity::find()
         .filter(friend_list::Column::Id.eq(email))
         .one(&db)
         .await;
 
-    match user {
-        Ok(user) => {
-            let mut user: friend_list::ActiveModel = user.unwrap().into();
-            // user.score = Set(character_details.score.to_owned());
+    match users {
+        Ok(users) => {
+            let mut users: friend_list::ActiveModel = users.unwrap().into();
+            // users.score = Set(character_details.score.to_owned());
 
-            user.flag = Set("1".to_string());
+            users.flag = Set("1".to_string());
 
-            let user = user.update(&db).await;
+            let users = users.update(&db).await;
 
-            match user {
+            match users {
                 Ok(_) => (StatusCode::ACCEPTED, Json("Flag Updated successfully")).into_response(),
                 Err(_) => (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -342,7 +342,7 @@ pub async fn change_flag_handler(
         }
         Err(e) => {
             // Log the error and return a 500 status code
-            eprintln!("Failed to get user from the database: {}", e);
+            eprintln!("Failed to get users from the database: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json("Failed to update flag"),
@@ -391,20 +391,20 @@ pub async fn create_matched_handler(
             .into_response();
     }
 
-    // Find the user from the friend_list
+    // Find the users from the friend_list
     let user_result = friend_list::Entity::find()
         .filter(friend_list::Column::BoyEmailId.eq(boy_email.clone()))
         .filter(friend_list::Column::GirlEmailId.eq(girl_email.clone()))
         .one(&db)
         .await;
 
-    // Handle the result of finding the user
+    // Handle the result of finding the users
     match user_result {
-        Ok(Some(user)) => {
-            let mut user: friend_list::ActiveModel = user.into();
-            user.flag = Set("2".to_string());
+        Ok(Some(users)) => {
+            let mut users: friend_list::ActiveModel = users.into();
+            users.flag = Set("2".to_string());
 
-            if user.update(&db).await.is_err() {
+            if users.update(&db).await.is_err() {
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json("Failed to update flag to 2"),
@@ -420,19 +420,19 @@ pub async fn create_matched_handler(
                 .into_response()
         }
         Ok(_) => {
-            // User not found
+            // users not found
             (
                 StatusCode::NOT_FOUND,
-                Json("User not found for the provided emails"),
+                Json("users not found for the provided emails"),
             )
                 .into_response()
         }
         Err(e) => {
             // Log the error and return a 500 status code
-            eprintln!("Failed to get user from the database: {}", e);
+            eprintln!("Failed to get users from the database: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json("Failed to retrieve user from the database"),
+                Json("Failed to retrieve users from the database"),
             )
                 .into_response()
         }
@@ -481,22 +481,22 @@ pub async fn update_contest_score_handler(
         }
     };
 
-    // Attempt to find the user in the friend list by ID
+    // Attempt to find the users in the friend list by ID
     match friend_list::Entity::find()
         .filter(friend_list::Column::Id.eq(id))
         .one(&db)
         .await
     {
-        Ok(Some(user)) => {
-            let mut user: friend_list::ActiveModel = user.into();
-            user.contest_score = Set(contest_info.contestscore);
+        Ok(Some(users)) => {
+            let mut users: friend_list::ActiveModel = users.into();
+            users.contest_score = Set(contest_info.contestscore);
 
-            // Attempt to update the user's contest score
-            match user.update(&db).await {
+            // Attempt to update the users's contest score
+            match users.update(&db).await {
                 Ok(_) => (
                     StatusCode::OK,
                     Json(format!(
-                        "Contest score updated successfully for user with ID: {}",
+                        "Contest score updated successfully for users with ID: {}",
                         id
                     )),
                 )
@@ -515,7 +515,7 @@ pub async fn update_contest_score_handler(
         // It's a keyword used to represent the absence of a value, so the snake_case lint warning can be safely ignored here.
         Ok(None) => (
             StatusCode::NOT_FOUND,
-            Json(format!("User with ID {} not found", id)),
+            Json(format!("users with ID {} not found", id)),
         )
             .into_response(),
         Err(e) => {

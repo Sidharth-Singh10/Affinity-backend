@@ -9,7 +9,7 @@ use axum::{
 };
 use chrono::Utc;
 use cookie::Cookie;
-use entity::{pass_reset, user};
+use entity::{pass_reset, users};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
@@ -33,15 +33,15 @@ pub async fn signup_handler(
     Extension(db): Extension<DatabaseConnection>,
     Json(signup_info): Json<SignUpInfo>,
 ) -> impl IntoResponse {
-    // Check if user already exists
+    // Check if users already exists
 
-    let email_exists = user::Entity::find()
-        .filter(user::Column::Email.contains(&signup_info.email))
+    let email_exists = users::Entity::find()
+        .filter(users::Column::Email.contains(&signup_info.email))
         .one(&db)
         .await;
 
     if let Ok(Some(_)) = email_exists {
-        eprintln!("User with email {} already exists!", signup_info.email);
+        eprintln!("users with email {} already exists!", signup_info.email);
         return Err(StatusCode::CONFLICT);
     }
 
@@ -89,7 +89,7 @@ pub async fn signup_handler(
     let image_url: String = signup_info.image_url.unwrap_or_else(|| "".to_string());
     let score = signup_info.score;
 
-    let user_model = user::ActiveModel {
+    let user_model = users::ActiveModel {
         user_name: Set(username),
         email: Set(email),
         first_name: Set(Some(first_name)),
@@ -118,7 +118,7 @@ pub async fn signup_handler(
 
     match user_model.insert(&db).await {
         Ok(inserted_user) => {
-            let created_user = user::Entity::find_by_id(inserted_user.id)
+            let created_user = users::Entity::find_by_id(inserted_user.id)
                 .one(&db)
                 .await
                 .unwrap();
@@ -130,7 +130,7 @@ pub async fn signup_handler(
             }
         }
         Err(e) => {
-            eprintln!("Failed to insert user into the database: {}", e);
+            eprintln!("Failed to insert users into the database: {}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -143,15 +143,15 @@ pub async fn login_handler(
     let email = &login_info.email;
     let password = &login_info.password;
 
-    let user = user::Entity::find()
-        .filter(user::Column::Email.eq(email))
+    let users = users::Entity::find()
+        .filter(users::Column::Email.eq(email))
         .one(&db)
         .await
         .unwrap();
 
     let is_valid;
-    if let Some(ref user) = user {
-        is_valid = verify_password(password, &user.password)
+    if let Some(ref users) = users {
+        is_valid = verify_password(password, &users.password)
     } else {
         return Err(StatusCode::NOT_FOUND);
     }
@@ -183,7 +183,7 @@ pub async fn login_handler(
 
         let mut headers = HeaderMap::new();
         headers.insert("Set-Cookie", cookie.to_string().parse().unwrap());
-        return Ok((headers, Json(user)).into_response());
+        return Ok((headers, Json(users)).into_response());
 
         // Ok(Json(LoginResponse{token}));
     } else {
@@ -204,8 +204,8 @@ pub async fn send_pass_reset_handler(
         }
     };
 
-    if let Some(user) = user::Entity::find()
-        .filter(user::Column::Email.eq(email))
+    if let Some(users) = users::Entity::find()
+        .filter(users::Column::Email.eq(email))
         .one(&db)
         .await
         .unwrap()
@@ -215,14 +215,14 @@ pub async fn send_pass_reset_handler(
         let token_expiry = Utc::now() + chrono::Duration::hours(1);
         let token_expiry_timestamp = token_expiry.timestamp();
 
-        let username = user.user_name;
+        let username = users.user_name;
         let reset_link = format!("{}?token={}", *PASS_RESET_LINK, token);
         let sent_email = PassReset::new(username.to_string(), reset_link, email.to_string());
 
         let _ = sent_email.send_pass_reset().await;
 
         let pass_reset_model = pass_reset::ActiveModel {
-            user_id: Set(user.id),
+            user_id: Set(users.id),
             token: Set(hmac), // Store the HMAC instead of the plain token
             token_expiry: Set(token_expiry_timestamp),
         };
@@ -270,28 +270,28 @@ pub async fn new_password_handler(
                 return Err(StatusCode::BAD_REQUEST); // Token has expired
             }
 
-            // Delete all tokens for the user
+            // Delete all tokens for the users
             pass_reset::Entity::delete_many()
                 .filter(pass_reset::Column::UserId.eq(reset.user_id))
                 .exec(&txn)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-            // Update the user's password
-            let user_model = user::Entity::find_by_id(reset.user_id)
+            // Update the users's password
+            let user_model = users::Entity::find_by_id(reset.user_id)
                 .one(&txn)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
                 .ok_or(StatusCode::NOT_FOUND)?;
 
-            let mut user: user::ActiveModel = user_model.into();
+            let mut users: users::ActiveModel = user_model.into();
 
             // Hash the new password before storing
             let hashed_password =
                 hash_password(new_password).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-            user.password = Set(hashed_password);
-            user.update(&txn)
+            users.password = Set(hashed_password);
+            users.update(&txn)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

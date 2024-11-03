@@ -1,4 +1,4 @@
-use sea_orm_migration::{prelude::*, schema::*};
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -9,38 +9,38 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(User::Table)
+                    .table(Users::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(User::Id)
+                        ColumnDef::new(Users::Id)
                             .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(User::UserName).string().not_null())
-                    .col(ColumnDef::new(User::FirstName).string())
-                    .col(ColumnDef::new(User::LastName).string())
-                    .col(ColumnDef::new(User::Email).string().unique_key().not_null())
-                    .col(ColumnDef::new(User::Password).string().not_null())
-                    .col(ColumnDef::new(User::Age).integer().not_null())
-                    .col(ColumnDef::new(User::Gender).string().not_null())
-                    .col(ColumnDef::new(User::Location).string())
-                    .col(ColumnDef::new(User::Openness).string())
-                    .col(ColumnDef::new(User::Interests).string())
-                    .col(ColumnDef::new(User::ExpQual).string())
-                    .col(ColumnDef::new(User::RelationType).string())
-                    .col(ColumnDef::new(User::SocialHabits).string())
-                    .col(ColumnDef::new(User::PastRelations).string())
-                    .col(ColumnDef::new(User::Values).string())
-                    .col(ColumnDef::new(User::Style).string())
-                    .col(ColumnDef::new(User::Traits).string())
-                    .col(ColumnDef::new(User::Commitment).string())
-                    .col(ColumnDef::new(User::Resolution).string())
-                    .col(ColumnDef::new(User::ImageUrl).string().not_null())
-                    .col(ColumnDef::new(User::Score).integer().not_null())
-                    .col(ColumnDef::new(User::Uuid).uuid().unique_key().not_null())
-                    .col(ColumnDef::new(User::CreatedAt).date_time().not_null())
+                    .col(ColumnDef::new(Users::UserName).string().not_null().unique_key())
+                    .col(ColumnDef::new(Users::FirstName).string())
+                    .col(ColumnDef::new(Users::LastName).string())
+                    .col(ColumnDef::new(Users::Email).string().unique_key().not_null())
+                    .col(ColumnDef::new(Users::Password).string().not_null())
+                    .col(ColumnDef::new(Users::Age).integer().not_null())
+                    .col(ColumnDef::new(Users::Gender).string().not_null())
+                    .col(ColumnDef::new(Users::Location).string())
+                    .col(ColumnDef::new(Users::Openness).string())
+                    .col(ColumnDef::new(Users::Interests).string())
+                    .col(ColumnDef::new(Users::ExpQual).string())
+                    .col(ColumnDef::new(Users::RelationType).string())
+                    .col(ColumnDef::new(Users::SocialHabits).string())
+                    .col(ColumnDef::new(Users::PastRelations).string())
+                    .col(ColumnDef::new(Users::Values).string())
+                    .col(ColumnDef::new(Users::Style).string())
+                    .col(ColumnDef::new(Users::Traits).string())
+                    .col(ColumnDef::new(Users::Commitment).string())
+                    .col(ColumnDef::new(Users::Resolution).string())
+                    .col(ColumnDef::new(Users::ImageUrl).string().not_null())
+                    .col(ColumnDef::new(Users::Score).integer().not_null())
+                    .col(ColumnDef::new(Users::Uuid).uuid().unique_key().not_null())
+                    .col(ColumnDef::new(Users::CreatedAt).date_time().not_null())
                     .to_owned(),
             )
             .await
@@ -48,13 +48,13 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(User::Table).to_owned())
+            .drop_table(Table::drop().table(Users::Table).to_owned())
             .await
     }
 }
 
 #[derive(DeriveIden)]
-enum User {
+pub enum Users {
     Table,
     Id,
     UserName,
