@@ -18,10 +18,20 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Users::UserName).string().not_null().unique_key())
+                    .col(
+                        ColumnDef::new(Users::UserName)
+                            .string()
+                            .not_null()
+                            .unique_key(),
+                    )
                     .col(ColumnDef::new(Users::FirstName).string())
                     .col(ColumnDef::new(Users::LastName).string())
-                    .col(ColumnDef::new(Users::Email).string().unique_key().not_null())
+                    .col(
+                        ColumnDef::new(Users::Email)
+                            .string()
+                            .unique_key()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(Users::Password).string().not_null())
                     .col(ColumnDef::new(Users::Age).integer().not_null())
                     .col(ColumnDef::new(Users::Gender).string().not_null())
