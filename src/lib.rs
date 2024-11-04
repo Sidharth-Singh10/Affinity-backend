@@ -64,6 +64,7 @@ pub async fn run() -> Router<()> {
         .layer(axum::middleware::from_fn(authorization_middleware))
         .nest("/auth", auth_routes())
         .nest("/diagnostics", diagnostics_routes())
+        .nest("/aws", aws_routes())
         .layer(cors)
         .layer(Extension(db))
         .layer(Extension(redis_client));
