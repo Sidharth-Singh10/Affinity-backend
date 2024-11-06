@@ -1,12 +1,11 @@
-use tokio_tungstenite::tungstenite::Message;
-use voice_channel::run;
 use futures_util::SinkExt;
 use futures_util::StreamExt;
+use tokio_tungstenite::tungstenite::Message;
+use voice_channel::run;
 #[tokio::test]
 async fn health_check_works() {
-    
     spawn_app().await;
-    
+
     let (mut ws_stream, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:5555/ws/1"))
         .await
         .expect("Failed to connect");
