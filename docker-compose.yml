@@ -19,24 +19,13 @@ services:
     networks:
       - backend_net
     command: ["./rusty_backend"]  # Command to start the application
-    environment:
-      - DATABASE_URL=postgresql://db_user:db_pass@postgres:5432/rusty_db
-      - SMTP_USERNAME=example@gmail.com
-      - SMTP_PASSWORD=passowrd
-      - SMTP_HOST=smtp.example.com
-      - OTP_SECRET=secret
-      - JWT_SECRET=secret
-      - PASS_RESET_LINK=http://localhost:5173/reset-password
-      - ALLOWED_ORIGINS=http://localhost:3000,http://yourdomain.com
+    env_file: .env.example
       # ADD AWS CREDS to run code runner
 
   postgres:
     image: postgres:latest
     container_name: postgres
-    environment:
-      - POSTGRES_USER=db_user
-      - POSTGRES_PASSWORD=db_pass
-      - POSTGRES_DB=rusty_db
+    env_file: .env.example
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -55,15 +44,13 @@ services:
       - backend_net
     volumes:
       - ./:/app  # Mount project directory to /app in the container
-    environment:
-      - DATABASE_URL=postgresql://db_user:db_pass@postgres:5432/rusty_db  # Match your backend DB
+    env_file: .env.example
 
   docker:
     image: docker:dind
     container_name: DiD
     privileged: true
-    environment:
-      - DOCKER_TLS_CERTDIR=/certs
+    env_file: .env.example
     volumes:
       - rusty_backend-docker-certs:/certs/client
       - rusty_backend-data:/var/rusty_backend_home
@@ -88,3 +75,4 @@ volumes:
   postgres_data:
   rusty_backend-docker-certs:
   rusty_backend-data:
+ rusty_backend-data:
