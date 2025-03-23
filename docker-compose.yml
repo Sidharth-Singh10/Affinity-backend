@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   rusty_backend:
@@ -20,8 +19,6 @@ services:
       - backend_net
     command: ["./rusty_backend"]  # Command to start the application
     env_file: .env.example
-      # ADD AWS CREDS to run code runner
-
   postgres:
     image: postgres:latest
     container_name: postgres
@@ -44,7 +41,7 @@ services:
       - backend_net
     volumes:
       - ./:/app  # Mount project directory to /app in the container
-    env_file: .env.example
+    env_file: .env
 
   docker:
     image: docker:dind
@@ -75,4 +72,3 @@ volumes:
   postgres_data:
   rusty_backend-docker-certs:
   rusty_backend-data:
- rusty_backend-data:

@@ -3,7 +3,8 @@
 pub mod prelude;
 
 pub mod avatar;
-pub mod friend_list;
-pub mod matched;
+pub mod game_sessions;
+pub mod matches;
 pub mod pass_reset;
+pub mod user_details;
 pub mod users;

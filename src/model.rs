@@ -1,3 +1,4 @@
+use entity::{user_details, users};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -21,7 +22,7 @@ pub struct SignUpInfo {
     pub traits: Option<String>,
     pub commitment: Option<String>,
     pub resolution: Option<String>,
-    pub score: i32,
+    pub score: f32,
     pub image_url: Option<String>,
 }
 
@@ -33,27 +34,28 @@ pub struct LoginInfo {
 
 #[derive(Deserialize)]
 pub struct GetUserInfo {
-    pub email: String,
+    pub id: i32,
 }
 #[derive(Deserialize)]
-pub struct UpadateScoreInfo {
-    pub email: String,
-    pub score: i32,
+pub struct UpdateScoreInfo {
+    pub user_id: i32,
+    pub score: f32,
 }
-
 #[derive(Serialize)]
 pub struct LoginResponse {
+    pub user: users::Model,
+    pub user_details: Option<user_details::Model>,
     pub token: String,
 }
 #[derive(Deserialize)]
-pub struct FriendListInfo {
-    pub girl_email: String,
-    pub boy_email: String,
+pub struct MatchListInfo {
+    pub female_id: i32,
+    pub male_id: i32,
 }
 
 #[derive(Deserialize)]
 pub struct CharacterDetails {
-    pub email: String,
+    pub user_id: i32,
     pub interests: Option<String>,
     pub values: Option<String>,
     pub style: Option<String>,
@@ -62,10 +64,6 @@ pub struct CharacterDetails {
     pub resolution: Option<String>,
 }
 
-#[derive(Deserialize)]
-pub struct GirlBoyInfo {
-    pub email: String,
-}
 #[derive(Deserialize)]
 pub struct GirlBoyInfoById {
     pub id: String,
@@ -77,14 +75,23 @@ pub struct Matched {
     pub girl_email: String,
 }
 
-#[derive(Deserialize)]
-pub struct ContestInfo {
-    pub id: String,
-    pub contestscore: String,
-}
-
 #[derive(Deserialize, Serialize)]
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
+    // pub email: String,
+}
+#[derive(Deserialize, Serialize)]
+
+pub struct GameSession {
+    pub id: i32,
+    pub score: f32,
+}
+#[derive(Serialize)]
+
+pub struct BoyScoreInfo {
+    pub match_id: i32,
+    pub score: f32,
+    pub male_id: i32,
+    pub game_id: i32,
 }

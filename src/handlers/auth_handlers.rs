@@ -9,18 +9,18 @@ use axum::{
 };
 use chrono::Utc;
 use cookie::Cookie;
-use entity::{avatar, pass_reset, users};
+use entity::{avatar, pass_reset, user_details, users};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
+use reqwest::header::AUTHORIZATION;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
     TransactionTrait,
 };
-use uuid::Uuid;
 
 use crate::{
     bcrypts::{hash_password, verify_password},
     configs::totp_config::totp,
-    model::{Claims, LoginInfo, SignUpInfo},
+    model::{Claims, LoginInfo, LoginResponse, SignUpInfo},
     utils::{
         constants::{JWT_SECRET, PASS_RESET_LINK},
         hash_token::{generate_secure_token, verify_token},
@@ -34,7 +34,6 @@ pub async fn signup_handler(
     Json(signup_info): Json<SignUpInfo>,
 ) -> impl IntoResponse {
     // Check if users already exists
-
     let email_exists = users::Entity::find()
         .filter(users::Column::Email.contains(&signup_info.email))
         .one(&db)
@@ -58,69 +57,21 @@ pub async fn signup_handler(
     };
 
     let age = signup_info.age;
-
-    // Handling other optional fields
     let gender = signup_info.gender;
 
-    let location = signup_info
-        .location
-        .unwrap_or_else(|| "Unknown".to_string());
-
-    let openness = signup_info
-        .openness
-        .unwrap_or_else(|| "Neutral".to_string());
-
-    let interest = signup_info.interests.unwrap_or_else(|| "None".to_string());
-
-    let exp_qual = signup_info.exp_qual.unwrap_or_else(|| "None".to_string());
-
-    let relation_type = signup_info
-        .relation_type
-        .unwrap_or_else(|| "Unspecified".to_string());
-
-    let social_habits = signup_info
-        .social_habits
-        .unwrap_or_else(|| "Unspecified".to_string());
-
-    let past_relations = signup_info
-        .past_relations
-        .unwrap_or_else(|| "Unspecified".to_string());
-
-    let image_url: String = signup_info.image_url.unwrap_or_else(|| "".to_string());
-    let score = signup_info.score;
-
+    // Create user model according to our database schema
     let user_model = users::ActiveModel {
-        user_name: Set(username.clone()),
-        email: Set(email),
-        first_name: Set(Some(first_name)),
-        last_name: Set(Some(last_name)),
-        password: Set(hashed_password),
-        uuid: Set(Uuid::new_v4()),
-        created_at: Set(Utc::now().naive_utc()),
+        username: Set(username.clone()),
+        first_name: Set(first_name),
+        last_name: Set(last_name),
         age: Set(age),
+        email: Set(email),
+        password: Set(hashed_password),
         gender: Set(gender),
-        location: Set(Some(location)),
-        openness: Set(Some(openness)),
-        interests: Set(Some(interest)),
-        exp_qual: Set(Some(exp_qual)),
-        relation_type: Set(Some(relation_type)),
-        social_habits: Set(Some(social_habits)),
-        past_relations: Set(Some(past_relations)),
-        values: Set(None),
-        style: Set(None),
-        traits: Set(None),
-        commitment: Set(None),
-        resolution: Set(None),
-        image_url: Set(image_url.clone()),
-        score: Set(score),
+        created_at: Set(Utc::now().naive_utc()),
         ..Default::default()
     };
 
-    let avatar_model = avatar::ActiveModel {
-        user_name: Set(username),
-        object_key: Set(image_url),
-        ..Default::default()
-    };
     // Starting a transaction
     let txn = match db.begin().await {
         Ok(transaction) => transaction,
@@ -129,29 +80,65 @@ pub async fn signup_handler(
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     };
-    match user_model.insert(&txn).await {
-        Ok(_) => {
-            match avatar_model.insert(&txn).await {
-                Ok(_) => {
-                    // Commiting the transaction
-                    if let Err(e) = txn.commit().await {
-                        eprintln!("Failed to commit transaction: {}", e);
-                        return Err(StatusCode::INTERNAL_SERVER_ERROR);
-                    }
-                    Ok(StatusCode::CREATED)
-                }
-                Err(e) => {
-                    eprintln!("Failed to insert avatar into the database: {}", e);
-                    // Rollback on error
-                    let _ = txn.rollback().await;
-                    Err(StatusCode::INTERNAL_SERVER_ERROR)
-                }
-            }
-        }
+
+    // Insert the user
+    let inserted_user = match user_model.insert(&txn).await {
+        Ok(user) => user,
         Err(e) => {
             eprintln!("Failed to insert user into the database: {}", e);
-            // Rollback on error
             let _ = txn.rollback().await;
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
+    // Create user details model
+    let user_details_model = user_details::ActiveModel {
+        user_id: Set(inserted_user.id), // Reference to the user ID
+        location: Set(signup_info.location.unwrap_or_default()),
+        openness: Set(signup_info.openness.unwrap_or_default()),
+        interests: Set(signup_info.interests.unwrap_or_default()),
+        exp_qual: Set(signup_info.exp_qual.unwrap_or_default()),
+        relation_type: Set(signup_info.relation_type.unwrap_or_default()),
+        social_habits: Set(signup_info.social_habits.unwrap_or_default()),
+        past_relations: Set(signup_info.past_relations.unwrap_or_default()),
+        values: Set(signup_info.values.unwrap_or_default()),
+        style: Set(signup_info.style.unwrap_or_default()),
+        traits: Set(signup_info.traits.unwrap_or_default()),
+        commitment: Set(signup_info.commitment.unwrap_or_default()),
+        resolution: Set(signup_info.resolution.unwrap_or_default()),
+        image_url: Set(signup_info.image_url.clone().unwrap_or_default()),
+        score: Set(signup_info.score),
+    };
+
+    // Insert user details
+    if let Err(e) = user_details_model.insert(&txn).await {
+        eprintln!("Failed to insert user details into the database: {}", e);
+        let _ = txn.rollback().await;
+        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    // Create avatar if image_url is provided
+    if let Some(image_url) = signup_info.image_url.clone() {
+        if !image_url.is_empty() {
+            let avatar_model = avatar::ActiveModel {
+                user_id: Set(inserted_user.id), // Reference to the user ID
+                object_key: Set(image_url),
+                ..Default::default()
+            };
+
+            if let Err(e) = avatar_model.insert(&txn).await {
+                eprintln!("Failed to insert avatar into the database: {}", e);
+                let _ = txn.rollback().await;
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        }
+    }
+
+    // Commit the transaction
+    match txn.commit().await {
+        Ok(_) => Ok(StatusCode::CREATED),
+        Err(e) => {
+            eprintln!("Failed to commit transaction: {}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
@@ -164,52 +151,75 @@ pub async fn login_handler(
     let email = &login_info.email;
     let password = &login_info.password;
 
-    let users = users::Entity::find()
+    // Find user by email
+    let user_result = users::Entity::find()
         .filter(users::Column::Email.eq(email))
         .one(&db)
-        .await
-        .unwrap();
+        .await;
 
-    let is_valid;
-    if let Some(ref users) = users {
-        is_valid = verify_password(password, &users.password)
-    } else {
-        return Err(StatusCode::NOT_FOUND);
+    // Handle database errors
+    let user = match user_result {
+        Ok(maybe_user) => {
+            if let Some(user) = maybe_user {
+                user
+            } else {
+                return Err(StatusCode::NOT_FOUND);
+            }
+        }
+        Err(e) => {
+            eprintln!("Database error when finding user: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
+    if !verify_password(password, &user.password) {
+        return Err(StatusCode::UNAUTHORIZED);
     }
 
-    println!("{}", is_valid);
+    // Fetch user details to include in response
+    let user_details = user_details::Entity::find_by_id(user.id)
+        .one(&db)
+        .await
+        .unwrap_or(None);
 
-    Ok(if is_valid {
-        let claims = Claims {
-            sub: email.to_string(),
-            exp: (chrono::Utc::now() + chrono::Duration::days(1)).timestamp() as usize,
-        };
+    // Create JWT token
+    let claims = Claims {
+        sub: user.id.to_string(), // Using user ID instead of email for better security
+        exp: (chrono::Utc::now() + chrono::Duration::days(1)).timestamp() as usize,
+    };
 
-        let token = match encode(
-            &Header::default(),
-            &claims,
-            &EncodingKey::from_secret(JWT_SECRET.as_ref()),
-        ) {
-            Ok(tok) => tok,
-            Err(e) => {
-                eprintln!("Error generating token {} !!!", e);
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-        };
+    let token = match encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(JWT_SECRET.as_ref()),
+    ) {
+        Ok(tok) => tok,
+        Err(e) => {
+            eprintln!("Error generating token: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
 
-        let token = format!("Bearer {}", token);
+    // Create response with token in cookie and header
+    let bearer_token = format!("Bearer {}", token);
+    let mut cookie = Cookie::new("token", bearer_token.clone());
+    cookie.set_http_only(true);
+    cookie.set_path("/");
+    // For production, also set cookie.set_secure(true) and SameSite
 
-        let mut cookie = Cookie::new("token", token);
-        cookie.set_http_only(true);
+    let mut headers = HeaderMap::new();
+    headers.insert("Set-Cookie", cookie.to_string().parse().unwrap());
+    // Also add token to Authorization header for API usage
+    headers.insert(AUTHORIZATION, bearer_token.parse().unwrap());
 
-        let mut headers = HeaderMap::new();
-        headers.insert("Set-Cookie", cookie.to_string().parse().unwrap());
-        return Ok((headers, Json(users)).into_response());
+    // Create response with user data and details
+    let response = LoginResponse {
+        user,
+        user_details,
+        token,
+    };
 
-        // Ok(Json(LoginResponse{token}));
-    } else {
-        StatusCode::UNAUTHORIZED.into_response()
-    })
+    Ok((headers, Json(response)).into_response())
 }
 
 // Modified send_pass_reset_handler
@@ -236,7 +246,7 @@ pub async fn send_pass_reset_handler(
         let token_expiry = Utc::now() + chrono::Duration::hours(1);
         let token_expiry_timestamp = token_expiry.timestamp();
 
-        let username = users.user_name;
+        let username = users.username;
         let reset_link = format!("{}?token={}", *PASS_RESET_LINK, token);
         let sent_email = PassReset::new(username.to_string(), reset_link, email.to_string());
 
