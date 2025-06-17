@@ -1,3 +1,6 @@
 [submodule "Affinity_frontend"]
 	path = Affinity_frontend
 	url = https://github.com/rishyym0927/Affinity_frontend/
+[submodule "PerOXO"]
+	path = PerOXO
+	url = https://github.com/Sidharth-Singh10/PerOXO
