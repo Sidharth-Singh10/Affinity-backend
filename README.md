@@ -3,17 +3,24 @@
 Welcome to the **Affinity** backend repository! This project is powered by the blazing-fast [Axum](https://github.com/tokio-rs/axum) framework, built using **Rust** to handle API requests and efficiently communicate with a **PostgreSQL** database. Our backend is optimized for high performance and scalability, designed to meet the demands of modern applications.
 
 
- <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
+## PerOxO Module – Microservices & Actor Concurrency Engine
+PerOxO is a core backend engine within the Affinity system designed for high-throughput real-time features like messaging and presence.
 
-## 🛠️ Tech Stack
+ Key Highlights:
+- **Actor Model Concurrency:** Built using Rust’s asynchronous capabilities to ensure isolated, concurrent actor execution per user session.
+- **Microservice Architecture:** Operates as an independent service, enabling decoupled scaling and service separation.
+- **gRPC Communication:** Interfaces with other Affinity services using performant, schema-defined gRPC calls.
+- **WebSocket Integration:** Handles persistent user connections, routes messages, and manages session lifecycles.
+This module lives as a subproject under ./per_oxo/ and can be built, tested, and deployed independently.
 
-- **🦀 Language**: Rust
-- **⚙️ Framework**: Axum
-- **💾 Database**: PostgreSQL
-- **🐳 Containerization**: Docker
-- **🚀 CI/CD**: GitHub Actions, Jenkins, Docker Compose
+## Tech Stack
+- **Language**: Rust
+- **Framework**: Axum
 
- <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
+- **Database**: PostgreSQL,ScyllaDB
+- **Containerization**: Docker
+- **CI/CD**: GitHub Actions, Jenkins,
+- **Orchestration**: Kubernetes with Helm
  
 ## 📋 Setup
 
@@ -41,7 +48,6 @@ Make sure you have the following installed:
    cargo run
    ```
 
- <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ### Running in Docker 🐳
 
@@ -55,8 +61,6 @@ To run the project in Docker, ensure that the environment variables for database
    ```bash
    docker-compose up
    ```
-
- <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ### Running on Kubernetes with Helm ⛵
 
@@ -72,29 +76,28 @@ Deploy the project on a Kubernetes cluster using Helm:
    helm install <app-name> ./helm_charts
    ```
 
- <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 🌱 Contributing
 
 We welcome contributions! Please check out our [CONTRIBUTING.md](https://github.com/Sidharth-Singh10/Affinity-backend/blob/main/CONTRIBUTING.md) to get started. Contributions are expected to follow good practices, maintain code quality, and align with the project’s objectives.
 
- <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 🏗️ Affinity Project Overview
+1. **PerOxO Architecture**:
 
-1. **Architecture** (deprecated)
+ ![Screenshot_20250618_112813](https://github.com/user-attachments/assets/f8ab4a55-ebd2-4242-855d-d2beea062b6d)
+2. **Affinity Architecture** (deprecated)
    
    ![Architecture](https://github.com/user-attachments/assets/402a9b69-eccd-478b-9c0e-50810200c28d)
 
-2. **Frontend Repository**:  
+3. **Frontend Repository**:  
    The frontend code for this project is available at:  
    [Affinity-Frontend](https://github.com/rishyym0927/Affinity_frontend)
 
-3. **Discord Bot Repository**
+4. **Discord Bot Repository**
    The code of discord bot used in our server is available at:                                                                                                              
    [Discord-bot](https://github.com/Sidharth-Singh10/affinity-bot)
 
- <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## ❤️ Our Valuable Contributors
 <div align="center">
@@ -113,4 +116,3 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 
 
 This version includes all necessary build, run, and deployment instructions formatted as code blocks for ease of use.
- <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
