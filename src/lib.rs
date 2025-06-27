@@ -61,7 +61,7 @@ pub async fn run() -> Router<()> {
         .nest("/user", user_routes())
         .nest("/matchmaking", matchmaking_routes())
         .nest("/score", score_routes())
-        .layer(axum::middleware::from_fn(authorization_middleware))
+        // .layer(axum::middleware::from_fn(authorization_middleware))
         .nest("/auth", auth_routes())
         .nest("/diagnostics", diagnostics_routes())
         .nest("/aws", aws_routes())
@@ -81,7 +81,7 @@ pub struct RedisClient {
 impl RedisClient {
     // Initialize RedisClient with a new connection
     pub fn new() -> Self {
-        let client = Client::open("redis://redis:6379/").expect("Invalid Redis URL");
+        let client = Client::open("redis://127.0.0.1:6379/").expect("Invalid Redis URL");
         let connection = client.get_connection().expect("Failed to connect to Redis");
         Self {
             connection: Arc::new(Mutex::new(connection)),

@@ -11,7 +11,7 @@ use aws_sdk_s3::Client;
 use axum::extract::Query;
 use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
 use entity::prelude::GameSessions;
-use entity::{game_sessions, matches, user_details, users};
+use entity::{avatar, game_sessions, matches, user_details, users};
 use migration::Expr;
 use sea_orm::{ActiveModelTrait, EntityTrait, TransactionTrait};
 use sea_orm::{Condition, QueryFilter};
@@ -115,9 +115,19 @@ pub async fn update_score_handler(
 
 pub async fn get_user_handler(
     Extension(db): Extension<DatabaseConnection>,
-    Json(get_user_info): Json<GetUserInfo>,
+    Query(params): Query<HashMap<String, i32>>,
 ) -> impl IntoResponse {
-    let id = get_user_info.id;
+    // Extract the user ID from the query parameters
+    let id = match params.get("id") {
+        Some(id) => *id,
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json("Missing user ID in query parameters"),
+            )
+                .into_response();
+        }
+    };
     let users = users::Entity::find()
         .filter(users::Column::Id.eq(id))
         .one(&db)
@@ -591,62 +601,33 @@ pub async fn update_game_session_score(
 
 pub async fn get_user_avatar(
     Extension(db): Extension<DatabaseConnection>,
-    Query(params): Query<HashMap<String, String>>,
+    Query(params): Query<HashMap<String, i32>>,
 ) -> Result<Json<String>, StatusCode> {
-    let config = aws_config::from_env()
-        .region(Region::new("ap-south-1"))
-        .load()
-        .await;
-    let client = Client::new(&config);
-
-    let bucket_name = "affinitys3";
-
-    let username = match params.get("id") {
-        Some(id) => id,
+    let user_id = match params.get("id") {
+        Some(id) => *id,
         None => {
-            eprintln!("Id parameter is missing.");
+            eprintln!("User ID parameter is missing.");
             return Err(StatusCode::BAD_REQUEST);
         }
     };
 
-    // Fetch avatar object key from the database
-    let avatar_entry = match entity::avatar::Entity::find()
-        .filter(entity::avatar::Column::UserId.eq(username.clone()))
+    match avatar::Entity::find()
+        .filter(avatar::Column::UserId.eq(user_id))
         .one(&db)
         .await
     {
-        Ok(Some(entry)) => entry,
+        Ok(Some(avatar)) => Ok(Json(avatar.object_key)),
         Ok(None) => {
-            eprintln!("No avatar found for username: {}", username);
-            return Err(StatusCode::NOT_FOUND);
+            eprintln!("No avatar found for user_id: {}", user_id);
+            Err(StatusCode::NOT_FOUND)
         }
-        Err(e) => {
-            eprintln!("Database error: {}", e);
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        Err(err) => {
+            eprintln!("Database error: {:?}", err);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
-    };
-
-    let avatar_object_key = format!("avatars/{}", avatar_entry.object_key);
-
-    // Generate the presigned URL
-    let presigned_request = match client
-        .get_object()
-        .bucket(bucket_name)
-        .key(avatar_object_key.clone())
-        .presigned(PresigningConfig::expires_in(Duration::from_secs(600)).unwrap())
-        .await
-    {
-        Ok(request) => request,
-        Err(e) => {
-            eprintln!("Failed to create presigned URL: {}", e);
-            return Err(StatusCode::INTERNAL_SERVER_ERROR);
-        }
-    };
-
-    println!("Object URI: {}", presigned_request.uri());
-
-    Ok(Json(presigned_request.uri().to_string()))
+    }
 }
+
 pub async fn update_user_avatar(
     Query(params): Query<HashMap<String, String>>,
 ) -> Result<Json<String>, StatusCode> {

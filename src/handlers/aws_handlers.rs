@@ -6,6 +6,7 @@ use aws_config::Region;
 use aws_sdk_s3::{presigning::PresigningConfig, Client};
 use axum::{extract::Query, Json};
 use reqwest::StatusCode;
+use uuid::Uuid;
 
 pub async fn get_testcase(filename: &String, redis_client: &Arc<RedisClient>) -> Option<String>
 // -> Result<GetObjectOutput,SdkError<GetObjectError>>
@@ -154,5 +155,45 @@ pub async fn upload_to_aws(
 
     println!("Object URI: {}", presigned_request.uri());
 
+    Ok(Json(presigned_request.uri().to_string()))
+}
+
+pub async fn create_presigned_upload_url(
+     Query(params): Query<HashMap<String, String>>,
+) -> Result<Json<String>, StatusCode> {
+
+     let filename = match params.get("filename") {
+        Some(filename) => filename,
+        None => {
+            eprintln!("filename parameter is missing.");
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
+    
+    let config = aws_config::from_env()
+        .region(Region::new("ap-south-1"))
+        .load()
+        .await;
+    let client = Client::new(&config);
+
+    let bucket_name = "affinitys3";
+    let object_key = format!("uploads/{}_{}", Uuid::new_v4(), filename);
+
+    // Generate the presigned URL for PUT operation
+    let presigned_request = match client
+        .put_object()
+        .bucket(bucket_name)
+        .key(&object_key)
+        .presigned(PresigningConfig::expires_in(Duration::from_secs(3600)).unwrap()) // 1 hour expiry
+        .await
+    {
+        Ok(request) => request,
+        Err(e) => {
+            eprintln!("Failed to create presigned URL: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+
+    println!("Generated presigned URL for: {}", object_key);
     Ok(Json(presigned_request.uri().to_string()))
 }

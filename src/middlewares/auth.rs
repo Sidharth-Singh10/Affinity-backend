@@ -30,6 +30,8 @@ pub async fn authorization_middleware(
     let mut header_parts = auth_header.split_whitespace();
     let (_bearer, token) = (header_parts.next(), header_parts.next());
 
+    println!("Token: {:?}", token);
+
     let token_data = match token {
         Some(token) => match decode_jwt(token.to_string()) {
             Ok(data) => data,
