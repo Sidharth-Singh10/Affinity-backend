@@ -606,7 +606,7 @@ pub async fn get_user_avatar(
     let user_id = match params.get("id") {
         Some(id) => *id,
         None => {
-            eprintln!("User ID parameter is missing.");
+            eprintln!("id parameter is missing.");
             return Err(StatusCode::BAD_REQUEST);
         }
     };
