@@ -90,6 +90,10 @@ We welcome contributions! Please check out our [CONTRIBUTING.md](https://github.
    
    ![Architecture](https://github.com/user-attachments/assets/402a9b69-eccd-478b-9c0e-50810200c28d)
 
+3. **BackendDevOps**
+
+ ![BackendDevOps](/BackendOps.png)
+
 3. **Frontend Repository**:  
    The frontend code for this project is available at:  
    [Affinity-Frontend](https://github.com/rishyym0927/Affinity_frontend)
