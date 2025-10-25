@@ -4,8 +4,8 @@ use axum::{
 };
 
 use crate::handlers::crud_handlers::{
-    get_all_users_handler, get_user_avatar, get_user_by_id_handler, get_user_handler,
-    update_user_avatar, update_user_character_handler,
+    get_all_users_handler, get_user_avatar, get_user_by_id_handler, get_user_details_by_id_handler,
+    get_user_handler, update_user_avatar, update_user_bio_handler, update_user_character_handler,
 };
 
 pub fn user_routes() -> Router {
@@ -16,4 +16,6 @@ pub fn user_routes() -> Router {
         .route("/getuserbyid", post(get_user_by_id_handler))
         .route("/getuseravatar", get(get_user_avatar))
         .route("/updateuseravatar", post(update_user_avatar))
+        .route("/getuserdetails", get(get_user_details_by_id_handler))
+        .route("/updatebio/:id", put(update_user_bio_handler))
 }

@@ -49,6 +49,7 @@ impl MigrationTrait for Migration {
                     .col(string(UserDetails::Commitment))
                     .col(string(UserDetails::Resolution))
                     .col(string(UserDetails::ImageUrl))
+                    .col(string(UserDetails::Bio))
                     .col(float(UserDetails::Score))
                     .foreign_key(
                         ForeignKey::create()
@@ -249,6 +250,7 @@ enum UserDetails {
     Resolution,
     ImageUrl,
     Score,
+    Bio,
 }
 
 #[derive(DeriveIden)]

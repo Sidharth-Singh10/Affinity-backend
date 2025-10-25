@@ -24,6 +24,7 @@ pub struct SignUpInfo {
     pub resolution: Option<String>,
     pub score: f32,
     pub image_url: Option<String>,
+    pub bio: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -69,10 +70,9 @@ pub struct GirlBoyInfoById {
     pub id: String,
 }
 
-#[derive(Deserialize, Serialize)]
-pub struct Matched {
-    pub boy_email: String,
-    pub girl_email: String,
+#[derive(Deserialize)]
+pub struct UpdateBioPayload {
+    pub bio: String,
 }
 
 #[derive(Deserialize, Serialize)]

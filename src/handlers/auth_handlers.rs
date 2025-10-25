@@ -107,6 +107,7 @@ pub async fn signup_handler(
         commitment: Set(signup_info.commitment.unwrap_or_default()),
         resolution: Set(signup_info.resolution.unwrap_or_default()),
         image_url: Set(signup_info.image_url.clone().unwrap_or_default()),
+        bio: Set(signup_info.bio.clone().unwrap_or_default()),
         score: Set(signup_info.score),
     };
 

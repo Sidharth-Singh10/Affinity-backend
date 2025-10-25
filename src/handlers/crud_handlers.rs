@@ -3,12 +3,12 @@ use std::time::Duration;
 
 use crate::model::{
     BoyScoreInfo, CharacterDetails, GameSession, GetUserInfo, GirlBoyInfoById, MatchListInfo,
-    UpdateScoreInfo,
+    UpdateBioPayload, UpdateScoreInfo,
 };
 use aws_config::Region;
 use aws_sdk_s3::presigning::PresigningConfig;
 use aws_sdk_s3::Client;
-use axum::extract::Query;
+use axum::extract::{Path, Query};
 use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
 use entity::prelude::GameSessions;
 use entity::{avatar, game_sessions, matches, user_details, users};
@@ -403,9 +403,18 @@ pub async fn get_contest_matches(
 }
 pub async fn get_accepted_matches(
     Extension(db): Extension<DatabaseConnection>,
-    Json(user_info): Json<GetUserInfo>,
+    Query(params): Query<HashMap<String, i32>>,
 ) -> impl IntoResponse {
-    let user_id = user_info.id;
+    let user_id = match params.get("id") {
+        Some(id) => *id,
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json("Missing user ID in query parameters"),
+            )
+                .into_response();
+        }
+    };
 
     // Find all matches with ACCEPTED status where the user is either male or female
     let accepted_matches = matches::Entity::find()
@@ -674,4 +683,69 @@ pub async fn update_user_avatar(
     println!("Object URI: {}", presigned_request.uri());
 
     Ok(Json(presigned_request.uri().to_string()))
+}
+
+pub async fn get_user_details_by_id_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Query(params): Query<HashMap<String, i32>>,
+) -> impl IntoResponse {
+    let id = match params.get("id") {
+        Some(id) => *id,
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json("Missing user ID in query parameters"),
+            )
+                .into_response();
+        }
+    };
+    let result = user_details::Entity::find()
+        .filter(user_details::Column::UserId.eq(id))
+        .one(&db)
+        .await;
+
+    match result {
+        Ok(Some(details)) => Json(details).into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(format!("No user details found with ID: {}", id)),
+        )
+            .into_response(),
+        Err(e) => {
+            eprintln!("Database query failed: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json("Database query failed"),
+            )
+                .into_response()
+        }
+    }
+}
+
+pub async fn update_user_bio_handler(
+    Extension(db): Extension<DatabaseConnection>,
+    Path(id): Path<i32>,
+    Json(payload): Json<UpdateBioPayload>,
+) -> impl IntoResponse {
+    match user_details::Entity::find_by_id(id).one(&db).await {
+        Ok(Some(mut existing)) => {
+            existing.bio = payload.bio.clone();
+
+            let mut active_model: user_details::ActiveModel = existing.into();
+            active_model.bio = Set(payload.bio);
+
+            match active_model.update(&db).await {
+                Ok(_) => StatusCode::OK,
+                Err(e) => {
+                    eprintln!("Failed to update bio: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                }
+            }
+        }
+        Ok(None) => StatusCode::NOT_FOUND,
+        Err(e) => {
+            eprintln!("Database query failed: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
 }

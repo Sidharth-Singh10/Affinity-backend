@@ -17,7 +17,7 @@ pub fn matchmaking_routes() -> Router {
         .route("/creatematch", post(create_match))
         .route("/changeflag", post(change_status_to_contest))
         .route("/reject", post(reject_match))
-        .route("/getAcceptedMatched", post(get_accepted_matches))
+        .route("/getAcceptedMatched", get(get_accepted_matches))
         .route(
             "/getBoysGameScoresForGirl",
             post(get_boys_game_scores_for_girl),

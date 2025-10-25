@@ -21,6 +21,7 @@ pub struct Model {
     pub commitment: String,
     pub resolution: String,
     pub image_url: String,
+    pub bio: String,
     #[sea_orm(column_type = "Float")]
     pub score: f32,
 }
