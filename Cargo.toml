@@ -12,7 +12,7 @@ name = "rusty_backend"
 
 
 [workspace]
-members = [".","migration","entity", "voice_channel"]
+members = [".","migration","entity"]
 
 
 [dependencies]
