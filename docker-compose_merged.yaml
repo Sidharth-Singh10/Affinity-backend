@@ -1,0 +1,157 @@
+version: "2.4"
+
+services:
+  # --- Rust backend & local docker (DinD) + Redis ---
+  rusty_backend:
+    build: .
+    container_name: rusty_backend
+    working_dir: /app
+    depends_on:
+      - docker
+      - redis
+    volumes:
+      - rusty_backend-docker-certs:/certs/client:ro
+      - rusty_backend-data:/var/rusty_backend_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8000:3001"
+    networks:
+      - backend_net
+    command: ["./rusty_backend"]
+    env_file: .env
+
+  docker:
+    image: docker:dind
+    container_name: DiD
+    privileged: true
+    env_file: .env
+    volumes:
+      - rusty_backend-docker-certs:/certs/client
+      - rusty_backend-data:/var/rusty_backend_home
+    networks:
+      - backend_net
+    ports:
+      - "2376:2376"
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    networks:
+      - backend_net
+    ports:
+      - "6379:6379"
+
+  # --- ScyllaDB, RabbitMQ and chat stack ---
+  scylladb:
+    image: scylladb/scylla:latest
+    container_name: scylla
+    ports:
+      - "9042:9042"
+      - "9160:9160"
+      - "7000:7000"
+      - "7001:7001"
+    volumes:
+      - scylla_data:/var/lib/scylla
+    environment:
+      - SCYLLA_CLUSTER_NAME=chat_cluster
+      - SCYLLA_DC=datacenter1
+      - SCYLLA_RACK=rack1
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - chat_network
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - chat_network
+
+  chat-service:
+    image: sidharthsingh7/per_oxo_chat_service:latest
+    container_name: chat-service
+    ports:
+      - "50052:50052"
+    depends_on:
+      scylladb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RUST_LOG=info
+      - SCYLLA_HOST=scylladb:9042
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
+      - GRPC_ADDR=[::]:50052
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50052"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - chat_network
+
+  per-oxo:
+    image: sidharthsingh7/per_oxo:persistence
+    container_name: per-oxo
+    ports:
+      - "50051:50051"
+      - "4001:3000"
+    environment:
+      - RUST_LOG=debug
+      - GRPC_ADDR=[::]:50051
+      - USER_SERVICE_ADDR=http://user-service:50053
+      - CHAT_SERVICE_ADDR=http://chat-service:50052
+      - PER_OXO_SERVICE_ADDR=0.0.0.0:3000
+    depends_on:
+      chat-service:
+        condition: service_healthy
+    networks:
+      - chat_network
+    restart: unless-stopped
+
+  rabbit-consumer:
+    image: sidharthsingh7/per_oxo_rabbit_consumer:latest
+    container_name: rabbit-consumer
+    environment:
+      - RUST_LOG=info
+      - SCYLLA_HOST=scylladb:9042
+      - RABBITMQ_URL=amqp://admin:password@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      scylladb:
+        condition: service_healthy
+    networks:
+      - chat_network
+
+networks:
+  backend_net:
+    driver: bridge
+  chat_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  rusty_backend-docker-certs:
+  rusty_backend-data:
+  scylla_data:
+  rabbitmq_data:

@@ -1,36 +1,44 @@
-# Build stage
-FROM rust AS builder
-WORKDIR /app
+FROM rust:bookworm AS builder
 
-# Install necessary dependencies for building
+ARG FEATURES=""
+
 RUN apt-get update && apt-get install -y \
+    pkg-config \
+    clang \
+    lld \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy source code 
-COPY . .
-
-# Rust application in release mode
-RUN cargo build --release
-
-# Runtime stage
-FROM rust AS runtime
 WORKDIR /app
 
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+COPY tests ./tests
+COPY entity ./entity
+COPY migration ./migration
+COPY .env ./
+
+RUN if [ -z "$FEATURES" ]; then \
+      cargo build --release; \
+    else \
+      cargo build --release --features "$FEATURES"; \
+    fi
+
+FROM debian:bookworm-slim AS runtime
+
 RUN apt-get update && apt-get install -y \
-    lld \
-    clang \
+    ca-certificates \
     docker.io \
     jq \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Docker environment variables if you're using Docker in Docker
+WORKDIR /app
+
 ENV DOCKER_HOST=tcp://docker:2376
 ENV DOCKER_TLS_VERIFY=1
 ENV DOCKER_CERT_PATH=/certs/client
-ENV APP_ENVIRONMENT production
+ENV APP_ENVIRONMENT=production
 
-# Copy the compiled binary from the builder stage
 COPY --from=builder /app/target/release/rusty_backend /app/rusty_backend
 
-# Set the entry point to run the application
 ENTRYPOINT ["./rusty_backend"]
