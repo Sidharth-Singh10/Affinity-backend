@@ -16,7 +16,6 @@ COPY src ./src
 COPY tests ./tests
 COPY entity ./entity
 COPY migration ./migration
-COPY .env ./
 
 RUN if [ -z "$FEATURES" ]; then \
       cargo build --release; \
