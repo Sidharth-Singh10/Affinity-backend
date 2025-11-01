@@ -81,7 +81,8 @@ pub struct RedisClient {
 impl RedisClient {
     // Initialize RedisClient with a new connection
     pub fn new() -> Self {
-        let client = Client::open("redis://127.0.0.1:6379/").expect("Invalid Redis URL");
+        // let client = Client::open("redis://127.0.0.1:6379/").expect("Invalid Redis URL");
+        let client = Client::open("redis://redis:6379/").expect("Invalid Redis URL");
         let connection = client.get_connection().expect("Failed to connect to Redis");
         Self {
             connection: Arc::new(Mutex::new(connection)),

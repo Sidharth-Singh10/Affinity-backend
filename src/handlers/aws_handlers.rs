@@ -159,17 +159,16 @@ pub async fn upload_to_aws(
 }
 
 pub async fn create_presigned_upload_url(
-     Query(params): Query<HashMap<String, String>>,
+    Query(params): Query<HashMap<String, String>>,
 ) -> Result<Json<String>, StatusCode> {
-
-     let filename = match params.get("filename") {
+    let filename = match params.get("filename") {
         Some(filename) => filename,
         None => {
             eprintln!("filename parameter is missing.");
             return Err(StatusCode::BAD_REQUEST);
         }
     };
-    
+
     let config = aws_config::from_env()
         .region(Region::new("ap-south-1"))
         .load()
