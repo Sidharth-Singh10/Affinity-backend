@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-per-oxo
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-per-oxo
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-per-oxo
+    spec:
+      containers:
+        - name: per-oxo
+          image: {{ .Values.image.per_oxo.repository }}:{{ .Values.image.per_oxo.tag }}
+          ports:
+            - containerPort: 50051
+            - containerPort: 3000
+          env:
+            - name: RUST_LOG
+              value: debug
+            - name: GRPC_ADDR
+              value: "[::]:50051"
+            - name: CHAT_SERVICE_ADDR
+              value: http://chat-service:50052
+            - name: PER_OXO_SERVICE_ADDR
+              value: 0.0.0.0:3000

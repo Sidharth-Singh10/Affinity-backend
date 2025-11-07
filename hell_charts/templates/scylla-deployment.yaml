@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-scylladb
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-scylladb
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-scylladb
+    spec:
+      containers:
+        - name: scylladb
+          image: {{ .Values.image.scylladb.repository }}:{{ .Values.image.scylladb.tag }}
+          ports:
+            - containerPort: 9042
+            - containerPort: 9160
+            - containerPort: 7000
+            - containerPort: 7001
+          env:
+            - name: SCYLLA_CLUSTER_NAME
+              value: chat_cluster
+            - name: SCYLLA_DC
+              value: datacenter1
+            - name: SCYLLA_RACK
+              value: rack1
+          volumeMounts:
+            - name: scylla-data
+              mountPath: /var/lib/scylla
+      volumes:
+        - name: scylla-data
+          persistentVolumeClaim:
+            claimName: scylla-data

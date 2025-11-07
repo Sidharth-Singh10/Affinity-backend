@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-rabbit-consumer
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-rabbit-consumer
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-rabbit-consumer
+    spec:
+      containers:
+        - name: rabbit-consumer
+          image: {{ .Values.image.rabbit_consumer.repository }}:{{ .Values.image.rabbit_consumer.tag }}
+          env:
+            - name: RUST_LOG
+              value: info
+            - name: SCYLLA_HOST
+              value: scylladb:9042
+            - name: RABBITMQ_URL
+              value: amqp://admin:password@rabbitmq:5672
+          
+          volumeMounts:
+            - name: rabbitmq-data
+              mountPath: /var/lib/rabbitmq
+      volumes:
+        - name: rabbitmq-data
+          persistentVolumeClaim:
+            claimName: rabbitmq-data

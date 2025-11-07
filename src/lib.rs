@@ -12,6 +12,8 @@ use sea_orm::Database;
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 
+use crate::utils::constants::REDIS_URL;
+
 mod bcrypts;
 mod configs;
 mod errors;
@@ -22,6 +24,14 @@ mod routes;
 mod utils;
 
 pub async fn run() -> Router<()> {
+    // tracing_subscriber::registry()
+    //     .with(
+    //         tracing_subscriber::EnvFilter::try_from_default_env()
+    //             .unwrap_or_else(|_| "debug".into()),
+    //     )
+    //     .with(tracing_subscriber::fmt::layer().compact())
+    //     .init();
+
     let db_string = (*utils::constants::DATABASE_URL).clone();
 
     // Use ALLOWED_ORIGINS from constants.rs
@@ -79,10 +89,9 @@ pub struct RedisClient {
 }
 
 impl RedisClient {
-    // Initialize RedisClient with a new connection
     pub fn new() -> Self {
-        // let client = Client::open("redis://127.0.0.1:6379/").expect("Invalid Redis URL");
-        let client = Client::open("redis://redis:6379/").expect("Invalid Redis URL");
+        println!("Connecting to Redis at: {}", REDIS_URL.to_string());
+        let client = Client::open(REDIS_URL.to_string()).expect("Invalid Redis URL");
         let connection = client.get_connection().expect("Failed to connect to Redis");
         Self {
             connection: Arc::new(Mutex::new(connection)),

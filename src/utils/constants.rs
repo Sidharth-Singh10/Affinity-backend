@@ -36,6 +36,10 @@ lazy_static! {
         env::var("PASS_RESET_LINK").expect("PASS_RESET_LINK must be set")
     };
 
+    pub static ref REDIS_URL: String = {
+        env::var("REDIS_URL").expect("REDIS_URL must be set")
+    };
+
     pub static ref ALLOWED_ORIGINS: Vec<String> = {
         match env::var("ALLOWED_ORIGINS") {
             Ok(allowed_origins_env) => {

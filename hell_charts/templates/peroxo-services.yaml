@@ -1,0 +1,100 @@
+---
+# ScyllaDB Service (internal only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-scylladb
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Release.Name }}-scylladb
+  ports:
+    - name: cql
+      port: 9042
+      targetPort: 9042
+    - name: thrift
+      port: 9160
+      targetPort: 9160
+    - name: intra-node
+      port: 7000
+      targetPort: 7000
+    - name: intra-node-tls
+      port: 7001
+      targetPort: 7001
+
+---
+# RabbitMQ Service (internal only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-rabbitmq
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Release.Name }}-rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: management
+      port: 15672
+      targetPort: 15672
+
+---
+# Chat-Service (internal only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-chat-service
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Release.Name }}-chat-service
+  ports:
+    - name: grpc
+      port: 50052
+      targetPort: 50052
+
+---
+# Rabbit-Consumer (internal only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-rabbit-consumer
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Release.Name }}-rabbit-consumer
+  ports:
+    - name: app
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+
+---
+# Per-Oxo Service (exposed to the outside world)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-per-oxo
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  type: LoadBalancer  
+  selector:
+    app: {{ .Release.Name }}-per-oxo
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: 50051
+    - name: http
+      port: 4001
+      targetPort: 3000

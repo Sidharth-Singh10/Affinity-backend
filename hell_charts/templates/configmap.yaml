@@ -8,3 +8,4 @@ data:
   PASS_RESET_LINK : {{ .Values.passResetLink | quote }}
   SMTP_HOST:        {{ .Values.smtp.smtpHost | quote }}
   SMTP_USERNAME:  {{ .Values.smtp.smtpUsername | quote }}
+  REDIS_URL: {{ printf "redis://%s-redis:6379/" .Release.Name | quote }}
