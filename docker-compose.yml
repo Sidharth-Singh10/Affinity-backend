@@ -20,30 +20,6 @@ services:
     command: ["./rusty_backend"]  # Command to start the application
     env_file: .env
 
-  # postgres:
-  #   image: postgres:latest
-  #   container_name: postgres
-  #   env_file: .env
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   networks:
-  #     - backend_net
-  #   ports:
-  #     - "5432:5432"  # Exposing the PostgreSQL database port
-
-  # migration_runner:
-  #   image: rust:latest
-  #   container_name: migration_runner
-  #   command: "bash -c 'cargo install sea-orm-cli && sea-orm-cli migrate up'"
-  #   working_dir: /app
-  #   depends_on:
-  #     - postgres  # Ensure migrations only run after the database is available
-  #   networks:
-  #     - backend_net
-  #   volumes:
-  #     - ./:/app  # Mount project directory to /app in the container
-  #   env_file: .env
-
   docker:
     image: docker:dind
     container_name: DiD

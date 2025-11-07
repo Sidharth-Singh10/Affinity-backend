@@ -3,7 +3,7 @@ version: "2.4"
 services:
   # --- Rust backend & local docker (DinD) + Redis ---
   rusty_backend:
-    build: .
+    image: sidharthsingh7/rusty_backend:latest
     container_name: rusty_backend
     working_dir: /app
     depends_on:
@@ -118,7 +118,6 @@ services:
     environment:
       - RUST_LOG=debug
       - GRPC_ADDR=[::]:50051
-      - USER_SERVICE_ADDR=http://user-service:50053
       - CHAT_SERVICE_ADDR=http://chat-service:50052
       - PER_OXO_SERVICE_ADDR=0.0.0.0:3000
     depends_on:
