@@ -26,6 +26,10 @@ spec:
             - name: GRPC_ADDR
               value: "[::]:50051"
             - name: CHAT_SERVICE_ADDR
-              value: http://chat-service:50052
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-configmap
+                  key: CHAT_SERVICE_ADDR
+
             - name: PER_OXO_SERVICE_ADDR
               value: 0.0.0.0:3000

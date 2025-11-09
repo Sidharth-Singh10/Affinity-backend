@@ -9,3 +9,6 @@ data:
   SMTP_HOST:        {{ .Values.smtp.smtpHost | quote }}
   SMTP_USERNAME:  {{ .Values.smtp.smtpUsername | quote }}
   REDIS_URL: {{ printf "redis://%s-redis:6379/" .Release.Name | quote }}
+  SCYLLA_HOST: {{ printf "%s-scylladb:9042" .Release.Name | quote }}
+  RABBITMQ_URL: {{ printf "amqp://%s:%s@%s-rabbitmq:5672/%%2f" .Values.rabbitmq.user .Values.rabbitmq.password .Release.Name | quote }}
+  CHAT_SERVICE_ADDR: {{ printf "http://%s-chat-service:50052" .Release.Name | quote }}

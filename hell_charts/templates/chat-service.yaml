@@ -19,12 +19,13 @@ spec:
           image: {{ .Values.image.chat_service.repository }}:{{ .Values.image.chat_service.tag }}
           ports:
             - containerPort: 50052
+
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-configmap
+          
           env:
             - name: RUST_LOG
               value: info
-            - name: SCYLLA_HOST
-              value: scylladb:9042
-            - name: RABBITMQ_URL
-              value: amqp://admin:password@rabbitmq:5672
             - name: GRPC_ADDR
               value: "[::]:50052"

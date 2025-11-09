@@ -17,17 +17,21 @@ spec:
       containers:
         - name: rabbit-consumer
           image: {{ .Values.image.rabbit_consumer.repository }}:{{ .Values.image.rabbit_consumer.tag }}
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-configmap
           env:
             - name: RUST_LOG
               value: info
-            - name: SCYLLA_HOST
-              value: scylladb:9042
-            - name: RABBITMQ_URL
-              value: amqp://admin:password@rabbitmq:5672
-          
+            - name: QUEUE_NAME
+              value: direct_messages
+
           volumeMounts:
             - name: rabbitmq-data
               mountPath: /var/lib/rabbitmq
+
       volumes:
         - name: rabbitmq-data
           persistentVolumeClaim:
