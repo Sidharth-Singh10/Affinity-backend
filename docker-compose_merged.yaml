@@ -149,7 +149,6 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
   rusty_backend-docker-certs:
   rusty_backend-data:
   scylla_data:
