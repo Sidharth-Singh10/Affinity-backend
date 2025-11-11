@@ -88,13 +88,15 @@ metadata:
   labels:
     app: {{ .Chart.Name }}
 spec:
-  type: LoadBalancer  
+  type: NodePort
   selector:
     app: {{ .Release.Name }}-per-oxo
   ports:
     - name: grpc
       port: 50051
       targetPort: 50051
+      nodePort: 32595
     - name: http
       port: 4001
       targetPort: 3000
+      nodePort: 30101
